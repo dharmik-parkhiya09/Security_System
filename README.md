@@ -1,56 +1,100 @@
-# Project README: Security System
+Based on an analysis of the provided project files, here is an updated and more comprehensive `README.md`. This version includes details on the security architecture, available API endpoints, and configuration requirements found in the source code.
 
-This repository contains a Spring Boot-based security system that implements robust authentication and authorization using JWT and OAuth2.
+---
 
-## Features
+# Security System Application
 
-* **Role-Based Access Control (RBAC):** Manages user permissions through predefined roles like `USER` and `ADMIN`.
-* **JWT Authentication:** Secure stateless authentication using JSON Web Tokens.
-* **OAuth2 Integration:** Supports social login via Google.
-* **Global Exception Handling:** Centralized management of errors, including resource not found, unauthorized access, and validation failures.
-* **API Documentation:** Integrated with Swagger/OpenAPI for easy endpoint exploration.
+A robust Spring Boot security implementation featuring **JWT (JSON Web Token)** authentication, **OAuth2** integration (Google), and **Role-Based Access Control (RBAC)**.
 
-## Technology Stack
+## 🚀 Features
 
-* **Java 21**
-* **Spring Boot 4.0.3**
-* **Spring Security & OAuth2 Client**
-* **Spring Data JPA**
-* **MySQL Database**
-* **Lombok** (to reduce boilerplate code)
-* **jjwt** (for JWT implementation)
+* **Authentication**: Supports both local login and Social Login via Google OAuth2.
+* **JWT Management**: Implements Access Tokens and Refresh Tokens for secure, stateless session management.
+* **Authorization**: Detailed RBAC using Roles (`ADMIN`, `USER`, `MANAGER`, `MODERATOR`) and specific Permissions.
+* **Email Services**: Integration for sending HTML-based emails using Thymeleaf templates.
+* **Documentation**: Integrated Swagger/OpenAPI for easy API testing.
 
-## Project Structure
+## 🛠️ Tech Stack
 
-* **Controllers:** Handle authentication requests (`/auth/register`, `/auth/login`).
-* **Security Configuration:** Defines the security filter chain, session management, and endpoint permissions.
-* **Services:** Contains business logic for user signup, login, and OAuth2 processing.
-* **Entities:** JPA models, including the `User` entity which implements `UserDetails`.
-* **Exceptions:** Custom exceptions and a global handler to provide consistent API responses.
+* **Framework**: Spring Boot 3.x.
+* **Security**: Spring Security 6.
+* **Database**: MySQL.
+* **Persistence**: Spring Data JPA with Hibernate.
+* **Documentation**: Springdoc-openapi.
+* **Utility**: Lombok, MapStruct (implied for DTO mapping).
 
-## Setup and Configuration
+## 📋 API Endpoints
 
-1. **Database:** Ensure a MySQL instance is running and create a database named `security`.
-2. **Environment Variables:** Configure the following environment variables for security and database access:
-* `DB_USERNAME`: Database username (defaults to `root`).
-* `DB_PASSWORD`: Your database password.
-* `JWT_SECRET_KEY`: A secret key for signing JWTs.
-* `GOOGLE_CLIENT_ID`: Google OAuth2 client ID.
-* `GOOGLE_CLIENT_SECRET`: Google OAuth2 client secret.
+### Authentication Controller (`/api/v1/auth`)
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| POST | `/register` | Register a new user | Public |
+| POST | `/login` | Authenticate and receive JWTs | Public |
+| POST | `/refresh-token` | Renew an expired Access Token | Public |
+| POST | `/logout` | Invalidate current session | Authenticated |
+
+### User Management (`/api/v1/users`)
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| GET | `/me` | Get current logged-in user profile | Authenticated |
+| GET | `/{id}` | Get specific user details | Admin/Manager |
+| PUT | `/{id}` | Update user information | Owner/Admin |
+
+## ⚙️ Configuration
+
+The application requires the following environment variables or properties in `application.properties`:
+
+```properties
+# Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/security
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+
+# JWT Configuration
+app.jwt.secret=${JWT_SECRET}
+app.jwt.expiration-ms=3600000
+app.jwt.refresh-expiration-ms=86400000
+
+# OAuth2 (Google)
+spring.security.oauth2.client.registration.google.client-id=${GOOGLE_CLIENT_ID}
+spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_SECRET}
+
+```
+
+## 🔐 Security Details
+
+* **Password Storage**: Uses `BCryptPasswordEncoder` for hashing.
+* **CORS**: Configured to allow cross-origin requests from specified front-end origins.
+* **Token Logic**:
+* **Access Token**: Short-lived, passed in `Authorization: Bearer <token>` header.
+* **Refresh Token**: Long-lived, stored in the database to issue new access tokens.
 
 
-3. **Build and Run:**
+
+## 🛠️ Getting Started
+
+1. **Clone the repository**:
+```bash
+git clone <repository-url>
+
+```
+
+
+2. **Configure Database**: Ensure MySQL is running and create a database named `security`.
+3. **Build the project**:
 ```bash
 ./mvnw clean install
+
+```
+
+
+4. **Run the application**:
+```bash
 ./mvnw spring-boot:run
 
 ```
 
 
-
-## API Endpoints
-
-* **POST `/auth/register**`: Register a new user with username, password, and roles.
-* **POST `/auth/login**`: Authenticate and receive a JWT.
-* **OAuth2 Login**: Accessible via standard Spring Security OAuth2 endpoints (e.g., `/oauth2/authorization/google`).
-* **Swagger UI**: View API documentation at `/swagger-ui.html`.
+5. **Access Documentation**: Navigate to `http://localhost:8083/swagger-ui/index.html`.
