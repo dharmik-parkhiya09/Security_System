@@ -22,7 +22,7 @@ A robust Spring Boot security implementation featuring **JWT (JSON Web Token)** 
 
 ## 📋 API Endpoints
 
-### Authentication Controller (`/api/v1/auth`)
+### Authentication Controller (`/auth`)
 
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ A robust Spring Boot security implementation featuring **JWT (JSON Web Token)** 
 | POST | `/refresh-token` | Renew an expired Access Token | Public |
 | POST | `/logout` | Invalidate current session | Authenticated |
 
-### User Management (`/api/v1/users`)
+### User Management (`/users`)
 
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
