@@ -1,0 +1,75 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+############################################
+# Logs
+############################################
+*.log
+logs/
+
+############################################
+# Application Secrets
+############################################
+application-local.properties
+application-dev.properties
+application-prod.properties
+src/main/resources/application-secret.properties
+
+
+############################################
+# Database Files
+############################################
+*.db
+*.sqlite
+*.h2.db
+
+############################################
+# OS Files
+############################################
+.DS_Store
+Thumbs.db
+
+############################################
+# Node (Frontend inside project)
+############################################
+node_modules/
+dist/
+build/
+
+############################################
+# Target Safety
+############################################
+target/
+
+
