@@ -1,6 +1,3 @@
-Based on an analysis of the provided project files, here is an updated and more comprehensive `README.md`. This version includes details on the security architecture, available API endpoints, and configuration requirements found in the source code.
-
----
 
 # Security System Application
 
