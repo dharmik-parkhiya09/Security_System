@@ -7,6 +7,7 @@ import com.project.security.repository.RefreshTokenRepository;
 import com.project.security.repository.UserRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -32,6 +34,8 @@ public class RefreshTokenService {
         refreshToken.setUser(user);
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setExpiresAt(Instant.now().plusSeconds(REFRESH_TOKEN_DURATION_TIME));
+
+        log.info("Refresh Token generated for {}",user.getUsername());
 
         return refreshTokenRepository.save(refreshToken);
     }
@@ -50,7 +54,5 @@ public class RefreshTokenService {
     public void deleteByUser(User user) {
         refreshTokenRepository.deleteAll(user.getRefreshTokens());
     }
-
-
 
 }

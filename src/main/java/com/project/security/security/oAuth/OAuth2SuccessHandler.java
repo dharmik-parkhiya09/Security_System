@@ -7,6 +7,7 @@ import com.project.security.enums.RoleType;
 import com.project.security.repository.UserRepo;
 import com.project.security.security.jwt.JwtTokenProvider;
 import com.project.security.service.EmailService;
+import com.project.security.service.RefreshTokenService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,6 +36,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
     private final EmailService emailService;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -60,7 +64,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     newUser.setProvider(AuthProviderType.GOOGLE);
                     newUser.setProviderId(providerId);
                     newUser.setPassword(UUID.randomUUID().toString());
-                    newUser.setDate(LocalDateTime.now());
+                    newUser.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
                     newUser.setRoles(Set.of(RoleType.USER));
                     newUser.setVerified(false);
 
@@ -72,7 +76,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             String token = UUID.randomUUID().toString();
 
             user.setVerificationToken(token);
-            user.setVerificationExpiry(LocalDateTime.now().plusMinutes(15));
+            user.setVerificationExpiry(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).plusMinutes(15));
             userRepo.save(user);
 
             try {
@@ -89,11 +93,22 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        String jwt = jwtTokenProvider.generateToken(user);
+        String accessToken = jwtTokenProvider.generateToken(user);
+        String refreshToken =
+                refreshTokenService.createRefreshToken(user.getId()).getToken();
+
+
+        try {
+            emailService.sendLoginAlertEmail(user);
+            log.info("Login alert email sent to {}", user.getUsername());
+        } catch (MessagingException e) {
+            log.warn("Failed to send login alert email", e);
+        }
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.sendRedirect(
-                "http://localhost:8083/index.html?token=" + jwt
+                "http://localhost:8083/index.html?token=" + accessToken +
+                        "&refresh=" + refreshToken
         );
 
         log.info("User {} logged in successfully via OAuth2", email);

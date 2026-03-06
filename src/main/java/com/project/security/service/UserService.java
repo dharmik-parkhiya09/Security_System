@@ -6,25 +6,24 @@ import com.project.security.entity.User;
 import com.project.security.exception.ResourceNotFoundException;
 import com.project.security.repository.UserRepo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
 
-    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepo.findAll();
         return users.stream()
@@ -33,7 +32,6 @@ public class UserService {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public UserResponse getUserById(Long id) {
         User user = userRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapToResponse(user);
@@ -50,22 +48,22 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        user.setDate(LocalDateTime.now());
+        user.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
         User updatedUser = userRepo.save(user);
         return mapToResponse(updatedUser);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(Long id) {
         User user = userRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         userRepo.delete(user);
     }
 
     public UserResponse getCurrentUser(String username) {
-
         User user = userRepo.findByUsername(username)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        log.info("USER FOUND: {}", user.getUsername()); // ← add this
+        log.info("USER ROLES: {}", user.getRoles());     // ← add this
 
         return mapToResponse(user);
     }

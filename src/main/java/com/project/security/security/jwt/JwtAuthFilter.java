@@ -26,9 +26,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
         try {
+
             final String requestTokenHeader = request.getHeader("Authorization");
+
             if (requestTokenHeader == null || !requestTokenHeader.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;
@@ -37,19 +43,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = requestTokenHeader.substring(7);
 
             if (jwtTokenProvider.validateToken(token)) {
+
                 String username = jwtTokenProvider.getUsernameFromToken(token);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                     User user = userRepo.findByUsername(username).orElseThrow();
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            user, null, user.getAuthorities());
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    user,
+                                    null,
+                                    user.getAuthorities()
+                            );
+
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
 
             filterChain.doFilter(request, response);
+
         } catch (Exception ex) {
             handlerExceptionResolver.resolveException(request, response, null, ex);
+            return;
         }
     }
 }

@@ -40,7 +40,7 @@ public class JwtTokenProvider {
                 .subject(user.getUsername())
                 .claim("userId", user.getId().toString())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 60 * 1000))
+                .expiration(new Date(System.currentTimeMillis() + 24*60*60*1000))
                 .signWith(getSecretKey())
                 .compact();
     }

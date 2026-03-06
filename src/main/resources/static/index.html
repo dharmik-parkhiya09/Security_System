@@ -5,96 +5,111 @@
     <title>User Dashboard - Security System</title>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
         }
 
-        body {
-            font-family: "Segoe UI", Arial, sans-serif;
-            background: #f1f4f9;
+        body{
+            font-family:"Segoe UI",Arial,sans-serif;
+            background:#f1f4f9;
         }
 
-        .navbar {
-            background: #1f2937;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .navbar{
+            background:#1f2937;
+            color:white;
+            padding:15px 30px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
         }
 
-        .navbar h2 {
-            font-weight: 500;
+        .navbar h2{
+            font-weight:500;
         }
 
-        .logout-btn {
-            background: #dc3545;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
+        .logout-btn{
+            background:#dc3545;
+            padding:8px 15px;
+            border:none;
+            border-radius:5px;
+            color:white;
+            cursor:pointer;
         }
 
-        .logout-btn:hover {
-            background: #a71d2a;
+        .logout-btn:hover{
+            background:#a71d2a;
         }
 
-        .dashboard {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
+        .dashboard{
+            max-width:1000px;
+            margin:40px auto;
+            padding:20px;
         }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
+        .card{
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.08);
         }
 
-        .card h3 {
-            margin-bottom: 15px;
-            color: #1f2937;
+        .card h3{
+            margin-bottom:15px;
+            color:#1f2937;
         }
 
-        .user-details p {
-            margin-bottom: 10px;
-            font-size: 15px;
+        .user-details p{
+            margin-bottom:10px;
+            font-size:15px;
         }
 
-        .actions button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-right: 10px;
+        .actions button{
+            padding:10px 15px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            margin-right:10px;
         }
 
-        .refresh-btn {
-            background: #2563eb;
-            color: white;
+        .refresh-btn{
+            background:#2563eb;
+            color:white;
         }
 
-        .refresh-btn:hover {
-            background: #1e40af;
+        .refresh-btn:hover{
+            background:#1e40af;
         }
 
-        .status {
-            font-weight: 500;
-            margin-top: 10px;
+        .status{
+            font-weight:500;
+            margin-top:10px;
         }
 
-        .status.error {
-            color: red;
+        .status.error{
+            color:red;
         }
 
-        .status.success {
-            color: green;
+        .status.success{
+            color:green;
         }
+
+        .login-btn{
+            padding:10px 18px;
+            background:#4285F4;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            font-size:14px;
+        }
+
+        .login-btn:hover{
+            background:#2f6ad9;
+        }
+
     </style>
 </head>
 
@@ -102,12 +117,13 @@
 
 <div class="navbar">
     <h2>🔐 Security System</h2>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button id="authButton" class="logout-btn">Logout</button>
 </div>
 
 <div class="dashboard">
 
     <div class="card">
+
         <h3>👤 User Profile</h3>
 
         <div class="user-details" id="userInfo">
@@ -119,73 +135,160 @@
         </div>
 
         <div class="status" id="statusMessage"></div>
+
     </div>
 
 </div>
 
 <script>
 
-    // 🔹 1. Get token from URL
     const params = new URLSearchParams(window.location.search);
-    const tokenFromUrl = params.get("token");
 
-    if (tokenFromUrl) {
-        localStorage.setItem("jwt", tokenFromUrl);
-        window.history.replaceState({}, document.title, "/index.html");
+    const tokenFromUrl = params.get("token");
+    const refreshFromUrl = params.get("refresh");
+
+    if(tokenFromUrl){
+        localStorage.setItem("jwt",tokenFromUrl);
     }
 
-    const jwt = localStorage.getItem("jwt");
+    if(refreshFromUrl){
+        localStorage.setItem("refreshToken",refreshFromUrl);
+    }
 
-    if (!jwt) {
-        document.getElementById("userInfo").innerHTML =
-            "<p>Not logged in. Please login first.</p>";
-    } else {
+    window.history.replaceState({},document.title,"/index.html");
+
+    let jwt = localStorage.getItem("jwt");
+
+    const authButton = document.getElementById("authButton");
+
+    if(!jwt){
+
+        document.getElementById("userInfo").innerHTML=`
+        <p>Not logged in. Please login first.</p>
+        <br>
+        <a href="/oauth2/authorization/google">
+          <p>  <button class="login-btn">Login with Google</button></p>
+        </a>
+    `;
+
+        authButton.innerText="Login";
+
+        authButton.onclick=()=>{
+            window.location.href="/oauth2/authorization/google";
+        };
+
+    }else{
+
+        authButton.innerText="Logout";
+
+        authButton.onclick=logout;
+
         loadUser();
     }
 
-    // 🔹 2. Load user from backend
-    function loadUser() {
+    async function loadUser(){
 
-        document.getElementById("statusMessage").innerText = "Loading...";
-        document.getElementById("statusMessage").className = "status";
+        document.getElementById("statusMessage").innerText="Loading...";
+        document.getElementById("statusMessage").className="status";
 
-        fetch("http://localhost:8083/users/me", {
-            method: "GET",
-            headers: {
-                "Authorization": "Bearer " + jwt
-            }
-        })
-            .then(res => {
-                if (!res.ok) throw new Error("Unauthorized");
-                return res.json();
-            })
-            .then(data => {
+        try{
 
-                document.getElementById("userInfo").innerHTML = `
-                <p><strong>Email:</strong> ${data.username ?? data.email}</p>
-                <p><strong>User ID:</strong> ${data.id}</p>
-                <p><strong>Roles:</strong> ${data.roles ? data.roles.join(", ") : "USER"}</p>
-            `;
-
-                document.getElementById("statusMessage").innerText = "Profile loaded successfully.";
-                document.getElementById("statusMessage").className = "status success";
-            })
-            .catch(() => {
-
-                document.getElementById("userInfo").innerHTML =
-                    "<p>Session expired. Please login again.</p>";
-
-                document.getElementById("statusMessage").innerText = "Unauthorized access.";
-                document.getElementById("statusMessage").className = "status error";
-
-                localStorage.removeItem("jwt");
+            let response=await fetch("http://localhost:8083/users/me",{
+                method:"GET",
+                headers:{
+                    "Authorization":"Bearer "+jwt
+                }
             });
+
+            if(response.status===401){
+
+                const refreshed=await refreshAccessToken();
+
+                if(!refreshed){
+                    throw new Error("Refresh token invalid");
+                }
+
+                jwt=localStorage.getItem("jwt");
+
+                response=await fetch("http://localhost:8083/users/me",{
+                    method:"GET",
+                    headers:{
+                        "Authorization":"Bearer "+jwt
+                    }
+                });
+
+                if(!response.ok){
+                    throw new Error("Retry request failed");
+                }
+
+            }
+
+            const data=await response.json();
+
+            document.getElementById("userInfo").innerHTML=`
+<p><strong>Email:</strong> ${data.username ?? data.email}</p>
+<p><strong>User ID:</strong> ${data.id}</p>
+<p><strong>Roles:</strong> ${data.roles ? data.roles.join(", ") : "USER"}</p>
+`;
+
+            document.getElementById("statusMessage").innerText="Profile loaded successfully.";
+            document.getElementById("statusMessage").className="status success";
+
+        }catch(error){
+
+            console.error("Auth error:",error);
+
+            document.getElementById("userInfo").innerHTML=`
+<p>Session expired. Please login again.</p>
+<br>
+<a href="/oauth2/authorization/google">
+<button class="login-btn">Login with Google</button>
+</a>
+`;
+
+            document.getElementById("statusMessage").innerText="Unauthorized access.";
+            document.getElementById("statusMessage").className="status error";
+
+            localStorage.removeItem("jwt");
+            localStorage.removeItem("refreshToken");
+
+        }
+
     }
 
-    // 🔹 3. Logout function
-    function logout() {
+    async function refreshAccessToken(){
+
+        const refreshToken=localStorage.getItem("refreshToken");
+
+        const response=await fetch("http://localhost:8083/auth/refresh",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                refreshToken:refreshToken
+            })
+        });
+
+        if(!response.ok){
+            return false;
+        }
+
+        const data=await response.json();
+
+        localStorage.setItem("jwt",data.accessToken);
+
+        return true;
+
+    }
+
+    function logout(){
+
         localStorage.removeItem("jwt");
-        window.location.href = "/";
+        localStorage.removeItem("refreshToken");
+
+        window.location.href="/auth/logout";
+
     }
 
 </script>

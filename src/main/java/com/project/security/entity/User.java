@@ -10,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Entity
@@ -46,7 +47,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Set<RoleType> roles = new HashSet<>();
 
-    private LocalDateTime date;
+    private ZonedDateTime createdAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -66,6 +67,7 @@ public class User implements UserDetails {
 
     private boolean verified;
     private String verificationToken;
-    private LocalDateTime verificationExpiry;
+    private ZonedDateTime  verificationExpiry;
+
 }
 

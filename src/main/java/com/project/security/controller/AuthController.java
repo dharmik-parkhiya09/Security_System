@@ -17,15 +17,19 @@ import com.project.security.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -41,7 +45,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        log.info("LOGIN HIT: {}", request.getUsername());
+        LoginResponse response = authService.login(request);
+        log.info("LOGIN RESPONSE: {}", response);  // ← ADD THIS
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/verify")
@@ -51,7 +58,7 @@ public class AuthController {
         User user = userRepo.findByVerificationToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        if (user.getVerificationExpiry().isBefore(LocalDateTime.now())) {
+        if (user.getVerificationExpiry().isBefore(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")))) {
             throw new RuntimeException("Token expired");
         }
 
