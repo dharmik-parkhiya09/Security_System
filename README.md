@@ -1,6 +1,4 @@
-Based on an analysis of the provided project files, here is an updated and more comprehensive `README.md`. This version includes details on the security architecture, available API endpoints, and configuration requirements found in the source code.
 
----
 
 # Security System Application
 
@@ -10,7 +8,7 @@ A robust Spring Boot security implementation featuring **JWT (JSON Web Token)** 
 
 * **Authentication**: Supports both local login and Social Login via Google OAuth2.
 * **JWT Management**: Implements Access Tokens and Refresh Tokens for secure, stateless session management.
-* **Authorization**: Detailed RBAC using Roles (`ADMIN`, `USER`) and specific Permissions.
+* **Authorization**: Detailed RBAC using Roles (`ADMIN`, `USER`, `MANAGER`, `MODERATOR`) and specific Permissions.
 * **Email Services**: Integration for sending HTML-based emails using Thymeleaf templates.
 * **Documentation**: Integrated Swagger/OpenAPI for easy API testing.
 
@@ -96,5 +94,6 @@ git clone <repository-url>
 
 ```
 
-
 5. **Access Documentation**: Navigate to `http://localhost:8083/swagger-ui/index.html`.
+
+
