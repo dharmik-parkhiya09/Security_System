@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -24,6 +25,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepo userRepo;
     private final HandlerExceptionResolver handlerExceptionResolver;
+    private static final String BEARER_PREFIX = "Bearer ";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -31,16 +33,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+
+
         try {
 
             final String requestTokenHeader = request.getHeader("Authorization");
 
-            if (requestTokenHeader == null || !requestTokenHeader.startsWith("Bearer ")) {
+            if (requestTokenHeader == null || !requestTokenHeader.startsWith(BEARER_PREFIX)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
-            String token = requestTokenHeader.substring(7);
+            String token = requestTokenHeader.substring(BEARER_PREFIX.length());
 
             if (jwtTokenProvider.validateToken(token)) {
 
@@ -48,7 +52,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                    User user = userRepo.findByUsername(username).orElseThrow();
+                    User user = userRepo.findByUsername(username)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
 
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
@@ -56,6 +61,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     null,
                                     user.getAuthorities()
                             );
+
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }

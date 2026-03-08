@@ -15,4 +15,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
     Optional<User> findByProviderIdAndProvider(String providerId, AuthProviderType providerType);
 
     Optional<User> findByVerificationToken(String token);
+
+    Optional<User> findByEmail(String email);
 }

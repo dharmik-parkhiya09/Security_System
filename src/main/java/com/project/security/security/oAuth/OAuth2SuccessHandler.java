@@ -21,7 +21,6 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Set;
@@ -58,17 +57,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         User user = userRepo.findByProviderIdAndProvider(providerId, AuthProviderType.GOOGLE)
                 .orElseGet(() -> {
+                    return userRepo.findByEmail(email)
+                            .orElseGet(() -> {
+                                User newUser = new User();
+                                newUser.setEmail(email);
+                                newUser.setUsername(email);
+                                newUser.setProvider(AuthProviderType.GOOGLE);
+                                newUser.setProviderId(providerId);
+                                newUser.setPassword(UUID.randomUUID().toString());
+                                newUser.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
+                                newUser.setRoles(Set.of(RoleType.USER));
+                                newUser.setVerified(false);
 
-                    User newUser = new User();
-                    newUser.setUsername(email);
-                    newUser.setProvider(AuthProviderType.GOOGLE);
-                    newUser.setProviderId(providerId);
-                    newUser.setPassword(UUID.randomUUID().toString());
-                    newUser.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
-                    newUser.setRoles(Set.of(RoleType.USER));
-                    newUser.setVerified(false);
-
-                    return userRepo.save(newUser);
+                                return userRepo.save(newUser);
+                            });
                 });
 
         if (!user.isVerified()) {

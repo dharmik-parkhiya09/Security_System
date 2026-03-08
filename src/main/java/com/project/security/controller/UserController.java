@@ -1,14 +1,15 @@
 package com.project.security.controller;
 
-import com.project.security.dto.request.RegisterRequest;
+import com.project.security.dto.request.ChangePasswordRequest;
+import com.project.security.dto.request.UpdateRoleRequest;
+import com.project.security.dto.request.UpdateUserRequest;
+import com.project.security.dto.response.UpdateUserResponse;
 import com.project.security.dto.response.UserResponse;
-import com.project.security.entity.User;
 import com.project.security.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,11 +29,10 @@ public class UserController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> updateUser(
+    public ResponseEntity<UpdateUserResponse> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody RegisterRequest request) {
-        UserResponse updated = userService.updateUser(id, request);
-        return ResponseEntity.ok(updated);
+            @Valid @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -50,12 +50,22 @@ public class UserController {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<UserResponse> getCurrentUser() {
+        return ResponseEntity.ok(userService.getCurrentUser());
+    }
 
-        String username = authentication.getName();
+    @PutMapping("/me/password")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
+        return ResponseEntity.ok("Password changed successfully.");
+    }
 
-        return ResponseEntity.ok(
-                userService.getCurrentUser(username)
-        );
+    @PutMapping("/admin/{id}/roles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserRoles(
+            @PathVariable Long id,
+            @RequestBody UpdateRoleRequest request) {
+
+        return ResponseEntity.ok(userService.updateUserRoles(id, request));
     }
 }
