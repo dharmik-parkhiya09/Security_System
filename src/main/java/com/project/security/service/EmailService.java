@@ -56,11 +56,9 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(User user, String token) throws MessagingException {
-
         String verifyUrl = "http://localhost:8083/auth/verify?token=" + token;
-
         sendEmail(
-                user.getUsername(),
+                user.getEmail(),        // ✅ was user.getUsername()
                 "Verify Your Account",
                 user.getUsername(),
                 "Please click the button below to verify your account.",
@@ -70,14 +68,26 @@ public class EmailService {
     }
 
     public void sendLoginAlertEmail(User user) throws MessagingException {
-
         sendEmail(
-                user.getUsername(),
+                user.getEmail(),        // ✅ was user.getUsername()
                 "New Login Detected",
                 user.getUsername(),
                 "A new login was detected in your account.",
                 "http://localhost:8083/index.html",
                 "Go to Dashboard"
+        );
+    }
+
+    public void sendResetPasswordEmail(User user, String token) throws MessagingException {
+
+        String resetUrl = "http://localhost:8083/index.html?resetToken=" + token;
+        sendEmail(
+                user.getEmail(),
+                "Reset Your Password",
+                user.getUsername(),
+                "Click the button below to reset your password.",
+                resetUrl,
+                "Reset Password"
         );
     }
 

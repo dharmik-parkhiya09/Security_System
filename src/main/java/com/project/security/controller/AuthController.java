@@ -1,9 +1,6 @@
 package com.project.security.controller;
 
-import com.project.security.dto.request.LoginRequest;
-import com.project.security.dto.request.LogoutRequest;
-import com.project.security.dto.request.RefreshRequest;
-import com.project.security.dto.request.RegisterRequest;
+import com.project.security.dto.request.*;
 import com.project.security.dto.response.AuthResponse;
 import com.project.security.dto.response.LoginResponse;
 import com.project.security.dto.response.RegisterResponse;
@@ -14,6 +11,7 @@ import com.project.security.repository.UserRepo;
 import com.project.security.security.jwt.JwtTokenProvider;
 import com.project.security.service.AuthService;
 import com.project.security.service.RefreshTokenService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -96,6 +94,25 @@ public class AuthController {
         refreshTokenRepository.deleteByToken(request.getRefreshToken());
 
         return ResponseEntity.ok("Logged out successfully");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @RequestBody ForgotPasswordRequest request)
+            throws MessagingException {
+
+        authService.forgotPassword(request.getEmail());
+
+        return ResponseEntity.ok("Password reset email sent, Please go to mail and click Reset password");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestBody ResetPasswordRequest request){
+
+        authService.resetPassword(request);
+
+        return ResponseEntity.ok("Password updated successfully");
     }
 
 }

@@ -13,5 +13,6 @@ public class UserResponse {
     private Long id;
     private String username;
     private Set<RoleType> roles;
+    private String email;
     private boolean verified;
 }

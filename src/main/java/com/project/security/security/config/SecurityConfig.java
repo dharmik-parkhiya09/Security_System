@@ -48,9 +48,12 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**",
                                 "/email/**",
-                                "/index.html"
+                                "/index.html",
+                                "/*.html",
+                                "/*.js",
+                                "/*.css"
                         ).permitAll()
-                        .requestMatchers("/users/me").authenticated()
+                        .requestMatchers("/users/me/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/users/**")
                         .hasAnyAuthority(USER_DELETE.getPermission())
                         .requestMatchers("/users/**")
