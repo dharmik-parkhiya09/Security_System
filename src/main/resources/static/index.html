@@ -1,963 +1,820 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Nexus Security | Dashboard</title>
-        <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Security | Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
 
-        <style>
-            :root {
-                --primary: #00ffcc;
-                --primary-dim: rgba(0, 255, 204, 0.15);
-                --primary-glow: rgba(0, 255, 204, 0.4);
-                --accent: #ff3c6e;
-                --accent-dim: rgba(255, 60, 110, 0.15);
-                --warn: #ffb900;
-                --warn-dim: rgba(255, 185, 0, 0.12);
-                --bg-body: #080c10;
-                --bg-card: #0d1117;
-                --bg-card2: #111820;
-                --text-main: #e2eaf4;
-                --text-muted: #5a7080;
-                --text-dim: #2a3a4a;
-                --border: rgba(0, 255, 204, 0.12);
-                --border-strong: rgba(0, 255, 204, 0.3);
-                --grid-line: rgba(0, 255, 204, 0.04);
-            }
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --primary-dim: rgba(0, 255, 204, 0.15);
+            --primary-glow: rgba(0, 255, 204, 0.4);
+            --accent: #ff3c6e;
+            --accent-dim: rgba(255, 60, 110, 0.15);
+            --warn: #ffb900;
+            --warn-dim: rgba(255, 185, 0, 0.12);
+            --bg-body: #080c10;
+            --bg-card: #0d1117;
+            --bg-card2: #111820;
+            --text-main: #e2eaf4;
+            --text-muted: #5a7080;
+            --text-dim: #2a3a4a;
+            --border: rgba(0, 255, 204, 0.12);
+            --border-strong: rgba(0, 255, 204, 0.3);
+            --grid-line: rgba(0, 255, 204, 0.04);
+        }
 
-            * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-            body {
-                font-family: 'Syne', sans-serif;
-                background-color: var(--bg-body);
-                color: var(--text-main);
-                line-height: 1.6;
-                min-height: 100vh;
-                background-image:
-                        linear-gradient(var(--grid-line) 1px, transparent 1px),
-                        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-                background-size: 40px 40px;
-                background-attachment: fixed;
-            }
+        body {
+            font-family: 'Syne', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            background-image:
+                    linear-gradient(var(--grid-line) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-attachment: fixed;
+        }
 
-            body::before {
-                content: '';
-                position: fixed; inset: 0;
-                background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-                pointer-events: none;
-                z-index: 9999;
-            }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+            pointer-events: none;
+            z-index: 9999;
+        }
 
-            /* ── NAVBAR ── */
-            .navbar {
-                background: rgba(8,12,16,0.9);
-                border-bottom: 1px solid var(--border);
-                padding: 0 2.5rem;
-                height: 64px;
-                display: flex; justify-content: space-between; align-items: center;
-                position: sticky; top: 0; z-index: 200;
-                backdrop-filter: blur(20px);
-            }
-            .navbar::after {
-                content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-                background: linear-gradient(90deg, transparent, var(--primary), transparent);
-                opacity: 0.4;
-            }
-            .brand {
-                display: flex; align-items: center; gap: 12px;
-                font-family: 'Space Mono', monospace;
-                font-weight: 700; font-size: 1.1rem;
-                color: var(--primary); letter-spacing: 0.15em; text-transform: uppercase;
-            }
-            .brand svg { filter: drop-shadow(0 0 8px var(--primary-glow)); animation: pulse-icon 3s ease-in-out infinite; }
-            @keyframes pulse-icon {
-                0%,100% { filter: drop-shadow(0 0 6px var(--primary-glow)); }
-                50%      { filter: drop-shadow(0 0 14px var(--primary-glow)); }
-            }
-            .brand-tag { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.3em; display: block; line-height: 1; margin-top: 2px; }
-            .nav-right { display: flex; align-items: center; gap: 12px; }
-            .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); animation: blink 2s ease-in-out infinite; }
-            @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-            .status-text { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--primary); letter-spacing: 0.1em; text-transform: uppercase; }
+        .navbar {
+            background: rgba(8,12,16,0.9);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2.5rem;
+            height: 64px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 200;
+            backdrop-filter: blur(20px);
+        }
+        .navbar::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.4;
+        }
+        .brand {
+            display: flex; align-items: center; gap: 12px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700; font-size: 1.1rem;
+            color: var(--primary); letter-spacing: 0.15em; text-transform: uppercase;
+        }
+        .brand svg { filter: drop-shadow(0 0 8px var(--primary-glow)); animation: pulse-icon 3s ease-in-out infinite; }
+        @keyframes pulse-icon {
+            0%,100% { filter: drop-shadow(0 0 6px var(--primary-glow)); }
+            50%      { filter: drop-shadow(0 0 14px var(--primary-glow)); }
+        }
+        .brand-tag { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.3em; display: block; line-height: 1; margin-top: 2px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); animation: blink 2s ease-in-out infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .status-text { font-family: 'Space Mono', monospace; font-size: 0.65rem; color: var(--primary); letter-spacing: 0.1em; text-transform: uppercase; }
 
-            /* ── CONTAINER ── */
-            .container { max-width: 1120px; margin: 48px auto; padding: 0 24px; }
+        .container { max-width: 1120px; margin: 48px auto; padding: 0 24px; }
 
-            /* ── CARD ── */
-            .card {
-                background: var(--bg-card);
-                border-radius: 4px; border: 1px solid var(--border);
-                padding: 40px; max-width: 460px; margin: 0 auto;
-                position: relative; overflow: hidden;
-                animation: fadeUp 0.4s ease both;
-            }
-            @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-            .card::before, .card::after { content:''; position:absolute; width:20px; height:20px; }
-            .card::before { top:-1px; left:-1px; border-top:2px solid var(--primary); border-left:2px solid var(--primary); }
-            .card::after  { bottom:-1px; right:-1px; border-bottom:2px solid var(--primary); border-right:2px solid var(--primary); }
-            .card-wide { max-width: 1000px; }
-            .card-glow { position:absolute; top:-80px; right:-80px; width:220px; height:220px; background:radial-gradient(circle, rgba(0,255,204,0.06), transparent 70%); pointer-events:none; }
+        .card {
+            background: var(--bg-card);
+            border-radius: 4px; border: 1px solid var(--border);
+            padding: 40px; max-width: 460px; margin: 0 auto;
+            position: relative; overflow: hidden;
+            animation: fadeUp 0.4s ease both;
+        }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .card::before, .card::after { content:''; position:absolute; width:20px; height:20px; }
+        .card::before { top:-1px; left:-1px; border-top:2px solid var(--primary); border-left:2px solid var(--primary); }
+        .card::after  { bottom:-1px; right:-1px; border-bottom:2px solid var(--primary); border-right:2px solid var(--primary); }
+        .card-wide { max-width: 1000px; }
+        .card-glow { position:absolute; top:-80px; right:-80px; width:220px; height:220px; background:radial-gradient(circle, rgba(0,255,204,0.06), transparent 70%); pointer-events:none; }
 
-            /* ── TYPOGRAPHY ── */
-            h3 { font-size:1.4rem; font-weight:800; margin-bottom:2rem; text-align:center; letter-spacing:0.05em; text-transform:uppercase; }
-            h3 span { color: var(--primary); }
-            .section-label { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--primary); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:0.6rem; display:block; }
+        h3 { font-size:1.4rem; font-weight:800; margin-bottom:2rem; text-align:center; letter-spacing:0.05em; text-transform:uppercase; }
+        h3 span { color: var(--primary); }
+        .section-label { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--primary); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:0.6rem; display:block; }
 
-            /* ── FORM ── */
-            .form-group { margin-bottom: 1.2rem; }
-            label { display:block; font-size:0.7rem; font-weight:700; margin-bottom:0.45rem; color:var(--text-muted); letter-spacing:0.15em; text-transform:uppercase; font-family:'Space Mono',monospace; }
-            input, select { width:100%; padding:12px 16px; border:1px solid var(--border-strong); border-radius:3px; font-size:0.9rem; font-family:'Space Mono',monospace; background:rgba(0,0,0,0.4); color:var(--text-main); transition:all 0.25s; appearance:none; }
-            input::placeholder { color: var(--text-dim); }
-            input:focus, select:focus { outline:none; border-color:var(--primary); background:rgba(0,255,204,0.03); box-shadow:0 0 0 3px var(--primary-dim); color:var(--primary); }
-            select option { background: var(--bg-card); color: var(--text-main); }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display:block; font-size:0.7rem; font-weight:700; margin-bottom:0.45rem; color:var(--text-muted); letter-spacing:0.15em; text-transform:uppercase; font-family:'Space Mono',monospace; }
+        input, select { width:100%; padding:12px 16px; border:1px solid var(--border-strong); border-radius:3px; font-size:0.9rem; font-family:'Space Mono',monospace; background:rgba(0,0,0,0.4); color:var(--text-main); transition:all 0.25s; appearance:none; }
+        input::placeholder { color: var(--text-dim); }
+        input:focus, select:focus { outline:none; border-color:var(--primary); background:rgba(0,255,204,0.03); box-shadow:0 0 0 3px var(--primary-dim); color:var(--primary); }
+        select option { background: var(--bg-card); color: var(--text-main); }
 
-            /* ── BUTTONS ── */
-            button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 22px; font-size:0.78rem; font-weight:700; font-family:'Space Mono',monospace; border-radius:3px; border:none; cursor:pointer; transition:all 0.2s; letter-spacing:0.1em; text-transform:uppercase; }
+        button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 22px; font-size:0.78rem; font-weight:700; font-family:'Space Mono',monospace; border-radius:3px; border:none; cursor:pointer; transition:all 0.2s; letter-spacing:0.1em; text-transform:uppercase; }
 
-            .btn-primary { background:var(--primary); color:#080c10; width:100%; position:relative; overflow:hidden; }
-            .btn-primary::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.4s; }
-            .btn-primary:hover::before { left:100%; }
-            .btn-primary:hover { box-shadow:0 0 20px var(--primary-glow); transform:translateY(-1px); }
+        .btn-primary { background:var(--primary); color:#080c10; width:100%; position:relative; overflow:hidden; }
+        .btn-primary::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.4s; }
+        .btn-primary:hover::before { left:100%; }
+        .btn-primary:hover { box-shadow:0 0 20px var(--primary-glow); transform:translateY(-1px); }
 
-            .btn-google { background:transparent; color:var(--text-main); border:1px solid var(--border-strong); width:100%; margin-top:1rem; font-family:'Syne',sans-serif; font-size:0.85rem; }
-            .btn-google:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-dim); }
+        .btn-google { background:transparent; color:var(--text-main); border:1px solid var(--border-strong); width:100%; margin-top:1rem; font-family:'Syne',sans-serif; font-size:0.85rem; }
+        .btn-google:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-dim); }
 
-            .btn-warn { background:var(--warn-dim); color:var(--warn); border:1px solid rgba(255,185,0,0.3); font-size:0.7rem; padding:7px 14px; }
-            .btn-warn:hover { background:var(--warn); color:#080c10; box-shadow:0 0 14px rgba(255,185,0,0.4); }
+        .btn-warn { background:var(--warn-dim); color:var(--warn); border:1px solid rgba(255,185,0,0.3); font-size:0.7rem; padding:7px 14px; }
+        .btn-warn:hover { background:var(--warn); color:#080c10; box-shadow:0 0 14px rgba(255,185,0,0.4); }
 
-            .btn-danger { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(255,60,110,0.3); font-size:0.7rem; padding:7px 14px; }
-            .btn-danger:hover { background:var(--accent); color:white; box-shadow:0 0 14px rgba(255,60,110,0.4); }
+        .btn-danger { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(255,60,110,0.3); font-size:0.7rem; padding:7px 14px; }
+        .btn-danger:hover { background:var(--accent); color:white; box-shadow:0 0 14px rgba(255,60,110,0.4); }
 
-            .btn-ghost { background:transparent; color:var(--primary); border:1px solid var(--border-strong); font-size:0.7rem; padding:7px 14px; }
-            .btn-ghost:hover { background:var(--primary-dim); box-shadow:0 0 10px var(--primary-dim); }
+        .btn-ghost { background:transparent; color:var(--primary); border:1px solid var(--border-strong); font-size:0.7rem; padding:7px 14px; }
+        .btn-ghost:hover { background:var(--primary-dim); box-shadow:0 0 10px var(--primary-dim); }
 
-            #logoutBtn { background:transparent; color:var(--accent); border:1px solid rgba(255,60,110,0.4); font-size:0.7rem; padding:8px 18px; }
-            #logoutBtn:hover { background:var(--accent); color:white; box-shadow:0 0 14px rgba(255,60,110,0.4); }
+        #logoutBtn { background:transparent; color:var(--accent); border:1px solid rgba(255,60,110,0.4); font-size:0.7rem; padding:8px 18px; }
+        #logoutBtn:hover { background:var(--accent); color:white; box-shadow:0 0 14px rgba(255,60,110,0.4); }
 
-            /* ── TABLE ── */
-            .table-container { overflow-x: auto; margin-top: 1.5rem; }
-            table { width:100%; border-collapse:collapse; }
-            th { background:rgba(0,255,204,0.04); padding:11px 16px; text-align:left; font-family:'Space Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--primary); border-bottom:1px solid var(--border-strong); }
-            td { padding:14px 16px; border-bottom:1px solid var(--border); font-size:0.85rem; font-family:'Space Mono',monospace; color:var(--text-muted); transition:background 0.15s; vertical-align: middle; }
-            tr:hover td { background:rgba(0,255,204,0.025); color:var(--text-main); }
-            tr:last-child td { border-bottom:none; }
-            td:first-child { color:var(--text-dim); font-size:0.75rem; }
-            .actions-cell { display:flex; gap:8px; justify-content:flex-end; align-items: center; }
+        .table-container { overflow-x: auto; margin-top: 1.5rem; }
+        table { width:100%; border-collapse:collapse; }
+        th { background:rgba(0,255,204,0.04); padding:11px 16px; text-align:left; font-family:'Space Mono',monospace; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--primary); border-bottom:1px solid var(--border-strong); }
+        td { padding:14px 16px; border-bottom:1px solid var(--border); font-size:0.85rem; font-family:'Space Mono',monospace; color:var(--text-muted); transition:background 0.15s; vertical-align: middle; }
+        tr:hover td { background:rgba(0,255,204,0.025); color:var(--text-main); }
+        tr:last-child td { border-bottom:none; }
+        td:first-child { color:var(--text-dim); font-size:0.75rem; }
+        .actions-cell { display:flex; gap:8px; justify-content:flex-end; align-items: center; }
 
-            /* Inline role select in table */
-            .role-select-inline {
-                width: auto;
-                padding: 6px 10px;
-                font-size: 0.75rem;
-                border-color: var(--border);
-                background: var(--bg-card2);
-            }
-            .role-select-inline:focus { border-color: var(--warn); box-shadow: 0 0 0 2px var(--warn-dim); color: var(--warn); }
+        .profile-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:3px; overflow:hidden; }
+        .profile-grid p { background:var(--bg-card2); padding:20px 22px; display:flex; flex-direction:column; gap:6px; }
+        .profile-grid strong { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.18em; font-weight:400; }
+        .profile-grid p > *:last-child { font-size:0.95rem; font-weight:700; color:var(--text-main); }
 
-            /* ── PROFILE GRID ── */
-            .profile-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:3px; overflow:hidden; }
-            .profile-grid p { background:var(--bg-card2); padding:20px 22px; display:flex; flex-direction:column; gap:6px; }
-            .profile-grid strong { font-family:'Space Mono',monospace; font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.18em; font-weight:400; }
-            .profile-grid p > *:last-child { font-size:0.95rem; font-weight:700; color:var(--text-main); }
+        .profile-actions { display:flex; gap:10px; margin-top:1.2rem; flex-wrap:wrap; }
 
-            /* ── BADGE ── */
-            .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:2px; background:rgba(255,185,0,0.1); border:1px solid rgba(255,185,0,0.3); color:var(--warn); font-size:0.65rem; font-weight:700; font-family:'Space Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; }
-            .badge::before { content:'▲'; font-size:0.5rem; }
+        .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:2px; background:rgba(255,185,0,0.1); border:1px solid rgba(255,185,0,0.3); color:var(--warn); font-size:0.65rem; font-weight:700; font-family:'Space Mono',monospace; letter-spacing:0.1em; text-transform:uppercase; }
+        .badge::before { content:'▲'; font-size:0.5rem; }
 
-            /* ── DIVIDER ── */
-            .divider { display:flex; align-items:center; text-align:center; margin:1.5rem 0; color:var(--text-dim); font-size:0.7rem; font-family:'Space Mono',monospace; letter-spacing:0.2em; }
-            .divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
-            .divider:not(:empty)::before { margin-right:.75em; }
-            .divider:not(:empty)::after  { margin-left:.75em; }
+        .divider { display:flex; align-items:center; text-align:center; margin:1.5rem 0; color:var(--text-dim); font-size:0.7rem; font-family:'Space Mono',monospace; letter-spacing:0.2em; }
+        .divider::before, .divider::after { content:''; flex:1; border-bottom:1px solid var(--border); }
+        .divider:not(:empty)::before { margin-right:.75em; }
+        .divider:not(:empty)::after  { margin-left:.75em; }
 
-            /* ── NAV LINKS ── */
-            .nav-links { margin-top:1.5rem; text-align:center; font-size:0.8rem; color:var(--text-muted); font-family:'Space Mono',monospace; }
-            .nav-links a { color:var(--primary); text-decoration:none; font-weight:700; cursor:pointer; }
-            .nav-links a:hover { text-shadow:0 0 10px var(--primary-glow); }
+        .nav-links { margin-top:1.5rem; text-align:center; font-size:0.8rem; color:var(--text-muted); font-family:'Space Mono',monospace; }
+        .nav-links a { color:var(--primary); text-decoration:none; font-weight:700; cursor:pointer; }
+        .nav-links a:hover { text-shadow:0 0 10px var(--primary-glow); }
 
-            /* ── HOME LAYOUT ── */
-            #homeView > div { margin-bottom: 24px; }
-            .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; }
-            .card-header h3 { text-align:left; margin-bottom:0; font-size:1.1rem; }
+        #homeView > div { margin-bottom: 24px; }
+        .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; }
+        .card-header h3 { text-align:left; margin-bottom:0; font-size:1.1rem; }
 
-            /* ── CHANGE PASSWORD SECTION (inline, collapsible) ── */
-            .pw-section {
-                margin-top: 1.5rem;
-                border-top: 1px solid var(--border);
-                padding-top: 1.5rem;
-            }
-            .pw-toggle {
-                background: none; border: none; color: var(--primary);
-                font-family: 'Space Mono', monospace; font-size: 0.7rem;
-                letter-spacing: 0.15em; text-transform: uppercase;
-                cursor: pointer; padding: 0; display: flex; align-items: center; gap: 6px;
-                transition: opacity 0.2s;
-            }
-            .pw-toggle:hover { opacity: 0.75; }
-            .pw-toggle .arrow { transition: transform 0.25s; display: inline-block; }
-            .pw-toggle.open .arrow { transform: rotate(90deg); }
+        .pw-section { margin-top:1.5rem; border-top:1px solid var(--border); padding-top:1.5rem; }
+        .pw-toggle { background:none; border:none; color:var(--primary); font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; padding:0; display:flex; align-items:center; gap:6px; transition:opacity 0.2s; }
+        .pw-toggle:hover { opacity: 0.75; }
+        .pw-toggle .arrow { transition:transform 0.25s; display:inline-block; }
+        .pw-toggle.open .arrow { transform: rotate(90deg); }
+        .pw-form { margin-top:1rem; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:10px; align-items:end; }
+        .pw-form.collapsed { display: none; }
 
-            .pw-form {
-                display: none;
-                margin-top: 1rem;
-                display: grid;
-                grid-template-columns: 1fr 1fr 1fr auto;
-                gap: 10px;
-                align-items: end;
-            }
-            .pw-form.collapsed { display: none; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:500; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .modal-box { background:var(--bg-card); border:1px solid var(--border-strong); border-radius:4px; padding:36px; width:100%; max-width:400px; position:relative; animation:fadeUp 0.25s ease; }
+        .modal-box::before { content:''; position:absolute; top:-1px; left:-1px; width:20px; height:20px; border-top:2px solid var(--warn); border-left:2px solid var(--warn); }
+        .modal-box::after  { content:''; position:absolute; bottom:-1px; right:-1px; width:20px; height:20px; border-bottom:2px solid var(--warn); border-right:2px solid var(--warn); }
+        .modal-title { font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1.5rem; color:var(--warn); font-family:'Space Mono',monospace; }
+        .modal-actions { display:flex; gap:10px; margin-top:1.5rem; }
+        .modal-actions button { flex:1; }
+        .btn-cancel { background:transparent; color:var(--text-muted); border:1px solid var(--border-strong); }
+        .btn-cancel:hover { background:var(--bg-card2); color:var(--text-main); }
 
-            /* ── MODAL ── */
-            .modal-overlay {
-                position: fixed; inset: 0;
-                background: rgba(0,0,0,0.75);
-                backdrop-filter: blur(6px);
-                z-index: 500;
-                display: flex; align-items: center; justify-content: center;
-                animation: fadeIn 0.2s ease;
-            }
-            @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-            .modal-box {
-                background: var(--bg-card);
-                border: 1px solid var(--border-strong);
-                border-radius: 4px;
-                padding: 36px; width: 100%; max-width: 400px;
-                position: relative;
-                animation: fadeUp 0.25s ease;
-            }
-            .modal-box::before { content:''; position:absolute; top:-1px; left:-1px; width:20px; height:20px; border-top:2px solid var(--warn); border-left:2px solid var(--warn); }
-            .modal-box::after  { content:''; position:absolute; bottom:-1px; right:-1px; width:20px; height:20px; border-bottom:2px solid var(--warn); border-right:2px solid var(--warn); }
-            .modal-title { font-size:0.95rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1.5rem; color:var(--warn); font-family:'Space Mono',monospace; }
-            .modal-actions { display:flex; gap:10px; margin-top:1.5rem; }
-            .modal-actions button { flex:1; }
-            .btn-cancel { background:transparent; color:var(--text-muted); border:1px solid var(--border-strong); }
-            .btn-cancel:hover { background:var(--bg-card2); color:var(--text-main); }
+        .toast { position:fixed; bottom:28px; right:28px; background:var(--bg-card2); border:1px solid var(--border-strong); border-radius:4px; padding:14px 20px; font-family:'Space Mono',monospace; font-size:0.78rem; color:var(--primary); z-index:1000; animation:slideIn 0.3s ease; display:flex; align-items:center; gap:10px; max-width:320px; }
+        .toast.error { color:var(--accent); border-color:rgba(255,60,110,0.3); }
+        @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
 
-            /* ── TOAST ── */
-            .toast {
-                position: fixed; bottom: 28px; right: 28px;
-                background: var(--bg-card2);
-                border: 1px solid var(--border-strong);
-                border-radius: 4px; padding: 14px 20px;
-                font-family: 'Space Mono', monospace; font-size: 0.78rem;
-                color: var(--primary); z-index: 1000;
-                animation: slideIn 0.3s ease;
-                display: flex; align-items: center; gap: 10px;
-                max-width: 320px;
-            }
-            .toast.error { color: var(--accent); border-color: rgba(255,60,110,0.3); }
-            @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+        .hidden { display: none !important; }
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:2px; }
+        ::-webkit-scrollbar-thumb:hover { background:var(--primary); }
 
-            /* ── MISC ── */
-            .hidden { display: none !important; }
-            ::-webkit-scrollbar { width:4px; height:4px; }
-            ::-webkit-scrollbar-track { background:var(--bg-body); }
-            ::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:2px; }
-            ::-webkit-scrollbar-thumb:hover { background:var(--primary); }
+        @media (max-width: 700px) {
+            .pw-form { grid-template-columns: 1fr; }
+            .navbar { padding: 0 1rem; }
+            .card { padding: 28px 20px; }
+        }
+    </style>
+</head>
+<body>
 
-            @media (max-width: 700px) {
-                .pw-form { grid-template-columns: 1fr; }
-                .navbar { padding: 0 1rem; }
-                .card { padding: 28px 20px; }
-            }
-        </style>
-    </head>
-    <body>
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <div>NEXUS <span class="brand-tag">Security Platform</span></div>
+    </div>
+    <div class="nav-right">
+        <div class="status-dot"></div>
+        <span class="status-text">System Online</span>
+        <button id="logoutBtn" class="hidden" onclick="logout()">⏻ Sign Out</button>
+    </div>
+</div>
 
-    <!-- NAVBAR -->
-    <div class="navbar">
-        <div class="brand">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            <div>NEXUS <span class="brand-tag">Security Platform</span></div>
+<div class="container">
+
+    <!-- REGISTER -->
+    <div id="registerView" class="card hidden">
+        <div class="card-glow"></div>
+        <span class="section-label" style="text-align:center;display:block;">// New Account</span>
+        <h3>Create <span>Account</span></h3>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="regUser" placeholder="enter_username" autocomplete="off">
         </div>
-        <div class="nav-right">
-            <div class="status-dot"></div>
-            <span class="status-text">System Online</span>
-            <button id="logoutBtn" class="hidden" onclick="logout()">⏻ Sign Out</button>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="off">
         </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="regPass" placeholder="••••••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" onclick="handleRegister()">⟶ Register Account</button>
+        <div class="nav-links">Already have an account? <a onclick="showView('login')">Sign in</a></div>
     </div>
 
-    <div class="container">
-
-        <!-- ═══════════════════════════════ REGISTER ═══════════════════════════════ -->
-        <div id="registerView" class="card hidden">
-            <div class="card-glow"></div>
-            <span class="section-label" style="text-align:center;display:block;">// New Account</span>
-            <h3>Create <span>Account</span></h3>
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="regUser" placeholder="enter_username" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="regEmail" placeholder="you@example.com" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="regPass" placeholder="••••••••••••" autocomplete="new-password">
-            </div>
-            <button class="btn-primary" onclick="handleRegister()">⟶ Register Account</button>
-            <div class="nav-links">Already have an account? <a onclick="showView('login')">Sign in</a></div>
+    <!-- LOGIN -->
+    <div id="loginView" class="card hidden">
+        <div class="card-glow"></div>
+        <span class="section-label" style="text-align:center;display:block;">// Authentication</span>
+        <h3>Welcome <span>Back</span></h3>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="loginUser" placeholder="enter_username" autocomplete="off">
         </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPass" placeholder="••••••••••••" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" onclick="handleLogin()">⟶ Sign In</button>
+        <div style="text-align:right; margin-top:0.6rem;">
+            <a onclick="showView('forgotPassword')" style="font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--text-muted); cursor:pointer; letter-spacing:0.1em; text-transform:uppercase; text-decoration:none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">Forgot password?</a>
+        </div>
+        <div class="divider">OR</div>
+        <a href="http://localhost:8083/oauth2/authorization/google" style="text-decoration:none;">
+            <button class="btn-google">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+        </a>
+        <div class="nav-links">New here? <a onclick="showView('register')">Create an account</a></div>
+    </div>
 
-        <!-- ════════════════════════════════ LOGIN ════════════════════════════════ -->
-        <div id="loginView" class="card hidden">
+    <!-- FORGOT PASSWORD -->
+    <div id="forgotPasswordView" class="card hidden">
+        <div class="card-glow"></div>
+        <span class="section-label" style="text-align:center;display:block;">// Account Recovery</span>
+        <h3>Reset <span>Password</span></h3>
+        <p style="font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-align:center; margin-bottom:1.5rem; line-height:1.8;">
+            Enter your registered email address and<br>we'll send a password reset link.
+        </p>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="forgotUser" placeholder="you@example.com" autocomplete="off">
+        </div>
+        <button class="btn-primary" onclick="handleForgotPassword()">⟶ Send Reset Link</button>
+        <div class="nav-links"><a onclick="showView('login')">← Back to Sign In</a></div>
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div id="resetPasswordView" class="card hidden">
+        <div class="card-glow"></div>
+        <span class="section-label" style="text-align:center;display:block;">// Set New Password</span>
+        <h3>New <span>Password</span></h3>
+        <input type="hidden" id="resetToken">
+        <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="resetNewPassword" placeholder="min 6 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="resetConfirmPassword" placeholder="repeat new password" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" onclick="handleResetPassword()">⟶ Update Password</button>
+        <div class="nav-links"><a onclick="showView('login')">← Back to Sign In</a></div>
+    </div>
+
+    <!-- HOME -->
+    <div id="homeView" class="hidden">
+
+        <!-- PROFILE CARD — visible to all logged-in users -->
+        <div class="card card-wide">
             <div class="card-glow"></div>
-            <span class="section-label" style="text-align:center;display:block;">// Authentication</span>
-            <h3>Welcome <span>Back</span></h3>
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="loginUser" placeholder="enter_username" autocomplete="off">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPass" placeholder="••••••••••••" autocomplete="new-password">
-            </div>
-            <button class="btn-primary" onclick="handleLogin()">⟶ Sign In</button>
-            <div style="text-align:right; margin-top:0.6rem;">
-                <a onclick="showView('forgotPassword')" style="font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--text-muted); cursor:pointer; letter-spacing:0.1em; text-transform:uppercase; text-decoration:none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">Forgot password?</a>
-            </div>
-            <div class="divider">OR</div>
-            <a href="http://localhost:8083/oauth2/authorization/google" style="text-decoration:none;">
-                <button class="btn-google">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    Continue with Google
+            <div class="card-header">
+                <div>
+                    <span class="section-label">// User Profile</span>
+                    <h3 style="text-align:left;margin-bottom:0;">Your <span>Dashboard</span></h3>
+                </div>
+                <button id="selfDeleteBtn" class="btn-danger hidden" onclick="deleteSelf()">
+                    ✕ Delete Account
                 </button>
-            </a>
-            <div class="nav-links">New here? <a onclick="showView('register')">Create an account</a></div>
-        </div>
-
-        <!-- ══════════════════════════ FORGOT PASSWORD ═══════════════════════════ -->
-        <!-- POST /auth/forgot-password  Body: { username }  (public) -->
-        <div id="forgotPasswordView" class="card hidden">
-            <div class="card-glow"></div>
-            <span class="section-label" style="text-align:center;display:block;">// Account Recovery</span>
-            <h3>Reset <span>Password</span></h3>
-            <p style="font-family:'Space Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-align:center; margin-bottom:1.5rem; line-height:1.8;">
-                Enter your registered email address and<br>we'll send a password reset link.
-            </p>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="forgotUser" placeholder="you@example.com" autocomplete="off">
             </div>
-            <button class="btn-primary" onclick="handleForgotPassword()">⟶ Send Reset Link</button>
-            <div class="nav-links"><a onclick="showView('login')">← Back to Sign In</a></div>
-        </div>
 
-        <!-- ═══════════════════════════ RESET PASSWORD ════════════════════════════ -->
-        <!-- POST /auth/reset-password  Body: { token, newPassword }  (public) -->
-        <!-- This view is shown automatically when the page loads with ?token=... in the URL -->
-        <div id="resetPasswordView" class="card hidden">
-            <div class="card-glow"></div>
-            <span class="section-label" style="text-align:center;display:block;">// Set New Password</span>
-            <h3>New <span>Password</span></h3>
-            <input type="hidden" id="resetToken">
-            <div class="form-group">
-                <label>New Password</label>
-                <input type="password" id="resetNewPassword" placeholder="min 6 characters" autocomplete="new-password">
-            </div>
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" id="resetConfirmPassword" placeholder="repeat new password" autocomplete="new-password">
-            </div>
-            <button class="btn-primary" onclick="handleResetPassword()">⟶ Update Password</button>
-            <div class="nav-links"><a onclick="showView('login')">← Back to Sign In</a></div>
-        </div>
-        <div id="homeView" class="hidden">
-
-            <!--
-                ┌─────────────────────────────────────────────────────────────────────┐
-                │  PROFILE CARD                                                       │
-                │  GET  /users/me           isAuthenticated()  — load profile         │
-                │  PUT  /users/me/password  isAuthenticated()  — change own password  │
-                └─────────────────────────────────────────────────────────────────────┘
-            -->
-            <div class="card card-wide">
-                <div class="card-glow"></div>
-                <div class="card-header">
-                    <div>
-                        <span class="section-label">// User Profile</span>
-                        <h3 style="text-align:left;margin-bottom:0;">Your <span>Dashboard</span></h3>
-                    </div>
-                    <!--
-                        DELETE /users/{id}
-                        @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal.id.toString()")
-                        Now works for regular users too with the .toString() fix
-                    -->
-                    <button id="selfDeleteBtn" class="btn-danger hidden" onclick="deleteSelf()">
-                        ✕ Delete Account
-                    </button>
-                </div>
-
-                <!-- Profile fields — populated by loadProfile() -->
-                <div id="userInfo" class="profile-grid">
-                    <p><strong>Status</strong><span style="color:var(--primary);">Loading...</span></p>
-                </div>
-
-                <!--
-                    Change Password — PUT /users/me/password
-                    Body: { oldPassword, newPassword }
-                    Available to ALL authenticated users (no special role required)
-                -->
-                <div class="pw-section">
-                    <button class="pw-toggle" id="pwToggle" onclick="togglePwForm()">
-                        <span class="arrow">▶</span> Change Password
-                    </button>
-                    <div class="pw-form collapsed" id="pwForm">
-                        <div class="form-group" style="margin:0">
-                            <label>Current Password</label>
-                            <input type="password" id="oldPassword" placeholder="current password" autocomplete="new-password">
-                        </div>
-                        <div class="form-group" style="margin:0">
-                            <label>New Password</label>
-                            <input type="password" id="newPassword" placeholder="min 6 chars" autocomplete="new-password">
-                        </div>
-                        <div class="form-group" style="margin:0">
-                            <label>Confirm New</label>
-                            <input type="password" id="confirmPassword" placeholder="repeat new" autocomplete="new-password">
-                        </div>
-                        <div class="form-group" style="margin:0">
-                            <label>&nbsp;</label>
-                            <button class="btn-ghost" onclick="submitChangePassword()">⟶ Update</button>
-                        </div>
-                    </div>
-                </div>
+            <div id="userInfo" class="profile-grid">
+                <p><strong>Status</strong><span style="color:var(--primary);">Loading...</span></p>
             </div>
 
             <!--
-                ┌──────────────────────────────────────────────────────────────────────┐
-                │  ADMIN PANEL  (hidden for non-admin users)                           │
-                │  GET  /users/            hasRole('ADMIN')  — list all users          │
-                │  PUT  /users/admin/{id}/roles  hasRole('ADMIN')  — change roles      │
-                │  DELETE /users/{id}      hasRole('ADMIN') or own id — delete user    │
-                └──────────────────────────────────────────────────────────────────────┘
+                Edit Profile button — shown to ALL logged-in users (regular + admin).
+                Both call PUT /users/{id} with their own id.
+                Backend must allow: hasRole('ADMIN') or #id == authentication.principal.id
             -->
-            <div id="adminSection" class="card card-wide hidden">
-                <div class="card-glow" style="top:auto;bottom:-80px;left:-80px;right:auto;"></div>
-                <div class="card-header">
-                    <div>
-                        <span class="section-label">// Admin Panel</span>
-                        <h3 style="text-align:left;margin-bottom:0;">User <span>Management</span></h3>
+            <div class="profile-actions">
+                <button class="btn-ghost" onclick="openSelfEditModal()">✎ Edit Profile</button>
+            </div>
+
+            <!-- Change Password — PUT /users/me/password -->
+            <div class="pw-section">
+                <button class="pw-toggle" id="pwToggle" onclick="togglePwForm()">
+                    <span class="arrow">▶</span> Change Password
+                </button>
+                <div class="pw-form collapsed" id="pwForm">
+                    <div class="form-group" style="margin:0">
+                        <label>Current Password</label>
+                        <input type="password" id="oldPassword" placeholder="current password" autocomplete="new-password">
                     </div>
-                    <span class="badge">Admin Access</span>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>#ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th style="text-align:right;">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody id="userList"></tbody>
-                    </table>
+                    <div class="form-group" style="margin:0">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" placeholder="min 6 chars" autocomplete="new-password">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label>Confirm New</label>
+                        <input type="password" id="confirmPassword" placeholder="repeat new" autocomplete="new-password">
+                    </div>
+                    <div class="form-group" style="margin:0">
+                        <label>&nbsp;</label>
+                        <button class="btn-ghost" onclick="submitChangePassword()">⟶ Update</button>
+                    </div>
                 </div>
             </div>
+        </div>
 
-        </div><!-- /homeView -->
-    </div><!-- /container -->
-
-    <!--
-        ════════════════════════ EDIT USER MODAL ════════════════════════
-        PUT /users/{id}   hasRole('ADMIN')
-        Body: RegisterRequest { username, email }
-        Opened from ✎ Edit button in admin table.
-    -->
-    <div id="editUserModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <div class="modal-title">✎ Edit User</div>
-            <input type="hidden" id="editUserId">
-            <p id="editUserLabel" style="font-family:'Space Mono',monospace; font-size:0.78rem; color:var(--text-muted); margin-bottom:1.2rem;"></p>
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="editUsername" placeholder="new_username" autocomplete="off">
+        <!--
+            ADMIN PANEL
+            Actions: Role change + Delete only.
+            No Edit button — admin edits their own profile via the dashboard card above.
+        -->
+        <div id="adminSection" class="card card-wide hidden">
+            <div class="card-glow" style="top:auto;bottom:-80px;left:-80px;right:auto;"></div>
+            <div class="card-header">
+                <div>
+                    <span class="section-label">// Admin Panel</span>
+                    <h3 style="text-align:left;margin-bottom:0;">User <span>Management</span></h3>
+                </div>
+                <span class="badge">Admin Access</span>
             </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="editEmail" placeholder="new@example.com" autocomplete="off">
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
-                <button class="btn-primary" style="width:auto; padding:12px 22px;" onclick="submitEditUser()">⟶ Save</button>
+            <div class="table-container">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="userList"></tbody>
+                </table>
             </div>
         </div>
-    </div>
 
-    <!--
-        ════════════════════════ ROLE UPDATE MODAL ════════════════════════
-        PUT /users/admin/{id}/roles   hasRole('ADMIN')
-        Body: { roles: ["ADMIN"] | ["USER"] }
-        Opened from the ✎ Role button in the admin table.
-    -->
-    <div id="roleModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <div class="modal-title">⟳ Update Role</div>
-            <input type="hidden" id="roleUserId">
-            <p id="roleUserLabel" style="font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--text-muted); margin-bottom:1.2rem;"></p>
-            <div class="form-group">
-                <label>Assign Role</label>
-                <select id="roleSelect">
-                    <option value="USER">Standard User</option>
-                    <option value="ADMIN">System Admin</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-warn" onclick="submitRoleUpdate()">⟶ Save Role</button>
-            </div>
+    </div>
+</div>
+
+<!--
+    SELF EDIT PROFILE MODAL
+    Used by ALL logged-in users (regular user + admin) to edit their OWN profile.
+    PUT /users/{id} — backend: hasRole('ADMIN') or own id
+-->
+<div id="selfEditModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-title">✎ Edit Profile</div>
+        <input type="hidden" id="selfEditUserId">
+        <p style="font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--text-muted); margin-bottom:1.2rem;">
+            Update your account details below.
+        </p>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="selfEditUsername" placeholder="new_username" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="selfEditEmail" placeholder="new@example.com" autocomplete="off">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeSelfEditModal()">Cancel</button>
+            <button class="btn-primary" style="width:auto; padding:12px 22px;" onclick="submitSelfEdit()">⟶ Save Changes</button>
         </div>
     </div>
+</div>
 
-    <script>
-        const API_BASE = "http://localhost:8083";
+<!--
+    ROLE UPDATE MODAL — Admin only
+    PUT /users/admin/{id}/roles
+-->
+<div id="roleModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-title">⟳ Update Role</div>
+        <input type="hidden" id="roleUserId">
+        <p id="roleUserLabel" style="font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--text-muted); margin-bottom:1.2rem;"></p>
+        <div class="form-group">
+            <label>Assign Role</label>
+            <select id="roleSelect">
+                <option value="USER">Standard User</option>
+                <option value="ADMIN">System Admin</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-warn" onclick="submitRoleUpdate()">⟶ Save Role</button>
+        </div>
+    </div>
+</div>
 
-        // ── INIT ──────────────────────────────────────────────────────────────────
-        window.onload = () => {
-            const params  = new URLSearchParams(window.location.search);
-            const token   = params.get("token");
-            const refresh = params.get("refresh");
-            const reset   = params.get("resetToken");
+<script>
+    const API_BASE = "http://localhost:8083";
 
-            // ① OAuth2 redirect: ?token=...&refresh=...
-            if (token && refresh) {
-                localStorage.setItem("jwt", token);
-                localStorage.setItem("refreshToken", refresh);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                showView("home");
-                loadProfile();
-                return;
-            }
+    // Logged-in user — populated after loadProfile()
+    let currentUser = null;
 
-            // ② Email verification redirect: ?token=... (no refresh — AuthController /verify)
-            if (token && !refresh) {
-                localStorage.setItem("jwt", token);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                toast("Email verified — welcome!");
-                showView("home");
-                loadProfile();
-                return;
-            }
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    window.onload = () => {
+        const params  = new URLSearchParams(window.location.search);
+        const token   = params.get("token");
+        const refresh = params.get("refresh");
+        const reset   = params.get("resetToken");
 
-            // ③ Password reset email link: ?resetToken=...
-            if (reset) {
-                document.getElementById("resetToken").value = reset;
-                window.history.replaceState({}, document.title, window.location.pathname);
-                showView("resetPassword");
-                return;
-            }
-
-            if (localStorage.getItem("jwt")) {
-                showView("home");
-                loadProfile();
-            } else {
-                showView("login");
-            }
-        };
-
-        // ── VIEW SWITCHER ─────────────────────────────────────────────────────────
-        function showView(view) {
-            ["registerView", "loginView", "forgotPasswordView", "resetPasswordView", "homeView"].forEach(id =>
-                document.getElementById(id).classList.add("hidden"));
-
-            if (view === "register") {
-                document.getElementById("registerView").classList.remove("hidden");
-                document.getElementById("regUser").value  = "";
-                document.getElementById("regEmail").value = "";
-                document.getElementById("regPass").value  = "";
-            }
-
-            if (view === "login") {
-                document.getElementById("loginView").classList.remove("hidden");
-                document.getElementById("loginUser").value = "";
-                document.getElementById("loginPass").value = "";
-            }
-
-            if (view === "forgotPassword") {
-                document.getElementById("forgotPasswordView").classList.remove("hidden");
-                document.getElementById("forgotUser").value = "";
-            }
-
-            if (view === "resetPassword") {
-                document.getElementById("resetPasswordView").classList.remove("hidden");
-                document.getElementById("resetNewPassword").value     = "";
-                document.getElementById("resetConfirmPassword").value = "";
-            }
-
-            if (view === "home") {
-                document.getElementById("homeView").classList.remove("hidden");
-                document.getElementById("logoutBtn").classList.remove("hidden");
-                ["oldPassword", "newPassword", "confirmPassword"].forEach(id => {
-                    document.getElementById(id).value = "";
-                });
-                document.getElementById("pwForm").classList.add("collapsed");
-                document.getElementById("pwToggle").classList.remove("open");
-            }
+        // OAuth2 redirect
+        if (token && refresh) {
+            localStorage.setItem("jwt", token);
+            localStorage.setItem("refreshToken", refresh);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showView("home");
+            loadProfile();
+            return;
         }
 
-        // ── REGISTER ─────────────────────────────────────────────────────────────
-        // POST /auth/register
-        async function handleRegister() {
-            const username = document.getElementById("regUser").value.trim();
-            const email    = document.getElementById("regEmail").value.trim();
-            const password = document.getElementById("regPass").value;
-
-            if (!username || !email || !password) { toast("Please fill in all fields", true); return; }
-            if (!email.includes("@"))             { toast("Enter a valid email address", true); return; }
-
-            const payload = { username, email, password, roles: ["USER"] };
-
-            const res = await fetch(`${API_BASE}/auth/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) { toast("Registration successful"); showView("login"); }
-            else {
-                const text = await res.text();
-                toast(text || "Registration failed", true);
-            }
+        // Email verification redirect
+        if (token && !refresh) {
+            localStorage.setItem("jwt", token);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            toast("Email verified — welcome!");
+            showView("home");
+            loadProfile();
+            return;
         }
 
-        // ── LOGIN ─────────────────────────────────────────────────────────────────
-        // POST /auth/login
-        async function handleLogin() {
-            const payload = {
-                username: document.getElementById("loginUser").value,
-                password: document.getElementById("loginPass").value
-            };
-            const res  = await fetch(`${API_BASE}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.accessToken) {
-                localStorage.setItem("jwt", data.accessToken);
-                localStorage.setItem("refreshToken", data.refreshToken);
-                showView("home");
-                loadProfile();
-            } else {
-                toast("Invalid credentials", true);
-            }
+        // Password reset link
+        if (reset) {
+            document.getElementById("resetToken").value = reset;
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showView("resetPassword");
+            return;
         }
 
-        // ── FORGOT PASSWORD ───────────────────────────────────────────────────────
-        // POST /auth/forgot-password  Body: { email }  (public)
-        // AuthService.forgotPassword() looks up by userRepo.findByEmail()
-        async function handleForgotPassword() {
-            const email = document.getElementById("forgotUser").value.trim();
-            if (!email)            { toast("Please enter your email", true); return; }
-            if (!email.includes("@")) { toast("Enter a valid email address", true); return; }
-
-            const res = await fetch(`${API_BASE}/auth/forgot-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email })          // ← must be "email", not "username"
-            });
-
-            if (res.ok) {
-                toast("Reset link sent — check your inbox");
-                showView("login");
-            } else {
-                const text = await res.text();
-                toast(text || "No account found with that email", true);
-            }
-        }
-
-        // ── RESET PASSWORD ────────────────────────────────────────────────────────
-        // POST /auth/reset-password  Body: { token, newPassword }  (public)
-        async function handleResetPassword() {
-            const token   = document.getElementById("resetToken").value;
-            const newPw   = document.getElementById("resetNewPassword").value;
-            const confPw  = document.getElementById("resetConfirmPassword").value;
-
-            if (!newPw || !confPw)   { toast("Please fill in both fields", true); return; }
-            if (newPw !== confPw)    { toast("Passwords do not match", true); return; }
-            if (newPw.length < 6)    { toast("Password must be at least 6 characters", true); return; }
-            if (!token)              { toast("Reset token missing — use the link from your email", true); return; }
-
-            const res = await fetch(`${API_BASE}/auth/reset-password`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token, newPassword: newPw })
-            });
-
-            if (res.ok) {
-                toast("Password updated — please sign in");
-                showView("login");
-            } else {
-                const text = await res.text();
-                toast(text || "Reset failed — link may have expired", true);
-            }
-        }
-
-        // ── LOAD PROFILE ──────────────────────────────────────────────────────────
-        // GET /users/me  →  isAuthenticated()
-        // No params — Spring reads identity from SecurityContext on the server
-        async function loadProfile() {
-            const jwt = localStorage.getItem("jwt");
-            const res = await fetch(`${API_BASE}/users/me`, {
-                headers: { Authorization: `Bearer ${jwt}` }
-            });
-            if (!res.ok) { logout(); return; }
-            const user = await res.json();
-
-            document.getElementById("userInfo").innerHTML = `
-                <p><strong>ID</strong><span>${user.id}</span></p>
-                <p><strong>Username</strong><span>${user.username}</span></p>
-                <p><strong>Email</strong><span style="font-size:0.82rem">${user.email || '—'}</span></p>
-                <p><strong>Roles</strong><span style="color:var(--primary)">${user.roles.join(", ")}</span></p>
-                <p><strong>Verified</strong><span style="color:${user.verified ? 'var(--primary)' : 'var(--accent)'}">${user.verified ? '✓ Yes' : '✕ No'}</span></p>
-            `;
-            // Store id for self-delete
-            document.getElementById("selfDeleteBtn").setAttribute("data-id", user.id);
-            document.getElementById("selfDeleteBtn").classList.remove("hidden");
-
-            // Admin panel: only render for ADMIN role
-            if (user.roles.includes("ADMIN")) {
-                document.getElementById("adminSection").classList.remove("hidden");
-                fetchAllUsers();
-            }
-        }
-
-        // ── CHANGE PASSWORD ───────────────────────────────────────────────────────
-        // PUT /users/me/password  →  isAuthenticated() (any logged-in user)
-        // Body: { oldPassword: string, newPassword: string }
-        function togglePwForm() {
-            const form   = document.getElementById("pwForm");
-            const toggle = document.getElementById("pwToggle");
-            const isOpen = !form.classList.contains("collapsed");
-            form.classList.toggle("collapsed", isOpen);
-            toggle.classList.toggle("open", !isOpen);
-        }
-
-        async function submitChangePassword() {
-            const oldPw  = document.getElementById("oldPassword").value;
-            const newPw  = document.getElementById("newPassword").value;
-            const confPw = document.getElementById("confirmPassword").value;
-
-            if (!oldPw || !newPw) { toast("Please fill in all password fields", true); return; }
-            if (newPw !== confPw) { toast("New passwords do not match", true); return; }
-            if (newPw.length < 6) { toast("Password must be at least 6 characters", true); return; }
-
-            const jwt = localStorage.getItem("jwt");
-            const res = await fetch(`${API_BASE}/users/me/password`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
-                body: JSON.stringify({ oldPassword: oldPw, newPassword: newPw })
-            });
-
-            if (res.ok) {
-                toast("Password updated successfully");
-                document.getElementById("oldPassword").value     = "";
-                document.getElementById("newPassword").value     = "";
-                document.getElementById("confirmPassword").value = "";
-                togglePwForm();
-            } else if (res.status === 403) {
-                // 403 = Spring Security blocked the route entirely.
-                // Fix: add  .requestMatchers(HttpMethod.PUT, "/users/me/password").authenticated()
-                // BEFORE the broad  .requestMatchers("/users/**").hasRole("ADMIN")  rule
-                // in your SecurityFilterChain.
-                toast("Access Denied — check your SecurityFilterChain config", true);
-            } else {
-                // Surface backend message e.g. "Old password doesn't match" / "Password too short"
-                let msg = "Password change failed";
-                try {
-                    const body = await res.text();
-                    if (body && body.length < 200) msg = body;
-                } catch (_) {}
-                toast(msg, true);
-            }
-        }
-
-        // ── FETCH ALL USERS ───────────────────────────────────────────────────────
-        // GET /users/  →  hasRole('ADMIN')
-        async function fetchAllUsers() {
-            const jwt = localStorage.getItem("jwt");
-            const res = await fetch(`${API_BASE}/users/`, {
-                headers: { Authorization: `Bearer ${jwt}` }
-            });
-            const users = await res.json();
-            const tbody = document.getElementById("userList");
-            tbody.innerHTML = "";
-            users.forEach(u => {
-                tbody.innerHTML += `
-                <tr>
-                    <td>${u.id}</td>
-                    <td>${u.username}</td>
-                    <td style="font-size:0.78rem;">${u.email || '—'}</td>
-                    <td>
-                        <span style="color:var(--primary);font-size:0.8rem;">${u.roles.join(", ")}</span>
-                    </td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="btn-ghost" onclick="openEditUserModal(${u.id}, '${u.username}', '${u.email || ''}')">
-                                ✎ Edit
-                            </button>
-                            <button class="btn-warn" onclick="openRoleModal(${u.id}, '${u.username}', '${u.roles[0]}')">
-                                ⟳ Role
-                            </button>
-                            <button class="btn-danger" onclick="deleteUser(${u.id})">
-                                ✕ Delete
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-        }
-
-        // ── UPDATE ROLE MODAL ─────────────────────────────────────────────────────
-        // PUT /users/admin/{id}/roles  →  hasRole('ADMIN')
-        // Body: { roles: ["USER"] } or { roles: ["ADMIN"] }
-        function openRoleModal(id, username, currentRole) {
-            document.getElementById("roleUserId").value    = id;
-            document.getElementById("roleUserLabel").textContent = `User: ${username}  (#${id})`;
-            document.getElementById("roleSelect").value    = currentRole;
-            document.getElementById("roleModal").classList.remove("hidden");
-        }
-
-        function closeModal() {
-            document.getElementById("roleModal").classList.add("hidden");
-        }
-
-        async function submitRoleUpdate() {
-            const id   = document.getElementById("roleUserId").value;
-            const role = document.getElementById("roleSelect").value;
-            const jwt  = localStorage.getItem("jwt");
-
-            const res = await fetch(`${API_BASE}/users/admin/${id}/roles`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
-                body: JSON.stringify({ roles: [role] })
-            });
-
-            if (res.ok) {
-                toast("Role updated successfully");
-                closeModal();
-                fetchAllUsers();
-            } else {
-                toast("Role update failed", true);
-            }
-        }
-
-        // ── DELETE OWN ACCOUNT ────────────────────────────────────────────────────
-        // DELETE /users/{id}
-        // @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal.id.toString()")
-        async function deleteSelf() {
-            const id = document.getElementById("selfDeleteBtn").getAttribute("data-id");
-            if (!confirm("Permanently delete YOUR account? This cannot be undone.")) return;
-            const jwt = localStorage.getItem("jwt");
-            const res = await fetch(`${API_BASE}/users/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${jwt}` }
-            });
-            if (res.ok) {
-                toast("Account deleted. Goodbye.");
-                setTimeout(logout, 1500);
-            } else {
-                toast("Could not delete account", true);
-            }
-        }
-
-        // ── EDIT USER (admin) ─────────────────────────────────────────────────────
-        // PUT /users/{id}   hasRole('ADMIN')
-        // Body: RegisterRequest { username, email }
-        function openEditUserModal(id, username, email) {
-            document.getElementById("editUserId").value    = id;
-            document.getElementById("editUserLabel").textContent = `Editing: ${username}  (#${id})`;
-            document.getElementById("editUsername").value  = username;
-            document.getElementById("editEmail").value     = email;
-            document.getElementById("editUserModal").classList.remove("hidden");
-        }
-
-        function closeEditModal() {
-            document.getElementById("editUserModal").classList.add("hidden");
-        }
-
-        async function submitEditUser() {
-            const id       = document.getElementById("editUserId").value;
-            const username = document.getElementById("editUsername").value.trim();
-            const email    = document.getElementById("editEmail").value.trim();
-            const jwt      = localStorage.getItem("jwt");
-
-            if (!username) { toast("Username cannot be empty", true); return; }
-
-            const res = await fetch(`${API_BASE}/users/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
-                body: JSON.stringify({ username, email })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-
-                // If backend returns new tokens (edited user is the logged-in user),
-                // update localStorage with fresh tokens so next request doesn't fail
-                if (data.accessToken && data.refreshToken) {
-                    localStorage.setItem("jwt", data.accessToken);
-                    localStorage.setItem("refreshToken", data.refreshToken);
-                    toast("User updated — session refreshed");
-                    closeEditModal();
-                    loadProfile();     // reload profile with updated info
-                    fetchAllUsers();
-                } else {
-                    toast("User updated");
-                    closeEditModal();
-                    fetchAllUsers();
-                }
-            } else {
-                const text = await res.text();
-                toast(text || "Update failed", true);
-            }
-        }
-
-        // ── DELETE USER (admin table) ─────────────────────────────────────────────
-        async function deleteUser(id) {
-            if (!confirm(`Permanently delete user #${id}?`)) return;
-            const jwt = localStorage.getItem("jwt");
-            const res = await fetch(`${API_BASE}/users/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${jwt}` }
-            });
-            if (res.ok) { toast("User deleted"); fetchAllUsers(); }
-            else          toast("Delete failed", true);
-        }
-
-        // ── LOGOUT ────────────────────────────────────────────────────────────────
-        function logout() {
-            localStorage.clear();
-            document.getElementById("logoutBtn").classList.add("hidden");
-            document.getElementById("adminSection").classList.add("hidden");
+        if (localStorage.getItem("jwt")) {
+            showView("home");
+            loadProfile();
+        } else {
             showView("login");
         }
+    };
 
-        // ── TOAST ─────────────────────────────────────────────────────────────────
-        function toast(msg, isError = false) {
-            const el = document.createElement("div");
-            el.className = "toast" + (isError ? " error" : "");
-            el.innerHTML = `<span>${isError ? "✕" : "✓"}</span> ${msg}`;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3500);
+    // ── VIEW SWITCHER ─────────────────────────────────────────────────────────
+    function showView(view) {
+        ["registerView","loginView","forgotPasswordView","resetPasswordView","homeView"].forEach(id =>
+            document.getElementById(id).classList.add("hidden"));
+
+        if (view === "register") {
+            document.getElementById("registerView").classList.remove("hidden");
+            document.getElementById("regUser").value  = "";
+            document.getElementById("regEmail").value = "";
+            document.getElementById("regPass").value  = "";
         }
+        if (view === "login") {
+            document.getElementById("loginView").classList.remove("hidden");
+            document.getElementById("loginUser").value = "";
+            document.getElementById("loginPass").value = "";
+        }
+        if (view === "forgotPassword") {
+            document.getElementById("forgotPasswordView").classList.remove("hidden");
+            document.getElementById("forgotUser").value = "";
+        }
+        if (view === "resetPassword") {
+            document.getElementById("resetPasswordView").classList.remove("hidden");
+            document.getElementById("resetNewPassword").value     = "";
+            document.getElementById("resetConfirmPassword").value = "";
+        }
+        if (view === "home") {
+            document.getElementById("homeView").classList.remove("hidden");
+            document.getElementById("logoutBtn").classList.remove("hidden");
+            ["oldPassword","newPassword","confirmPassword"].forEach(id => {
+                document.getElementById(id).value = "";
+            });
+            document.getElementById("pwForm").classList.add("collapsed");
+            document.getElementById("pwToggle").classList.remove("open");
+        }
+    }
 
-        // Close modals when clicking the overlay background
-        document.getElementById("roleModal").addEventListener("click", function(e) {
-            if (e.target === this) closeModal();
+    // ── REGISTER ─────────────────────────────────────────────────────────────
+    async function handleRegister() {
+        const username = document.getElementById("regUser").value.trim();
+        const email    = document.getElementById("regEmail").value.trim();
+        const password = document.getElementById("regPass").value;
+        if (!username || !email || !password) { toast("Please fill in all fields", true); return; }
+        if (!email.includes("@"))             { toast("Enter a valid email address", true); return; }
+        const res = await fetch(`${API_BASE}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, email, password, roles: ["USER"] })
         });
-        document.getElementById("editUserModal").addEventListener("click", function(e) {
-            if (e.target === this) closeEditModal();
+        if (res.ok) { toast("Registration successful"); showView("login"); }
+        else { const text = await res.text(); toast(text || "Registration failed", true); }
+    }
+
+    // ── LOGIN ─────────────────────────────────────────────────────────────────
+    async function handleLogin() {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: document.getElementById("loginUser").value,
+                password: document.getElementById("loginPass").value
+            })
         });
-    </script>
-    </body>
-    </html>
+        const data = await res.json();
+        if (data.accessToken) {
+            localStorage.setItem("jwt", data.accessToken);
+            localStorage.setItem("refreshToken", data.refreshToken);
+            showView("home");
+            loadProfile();
+        } else {
+            toast("Invalid credentials", true);
+        }
+    }
+
+    // ── FORGOT PASSWORD ───────────────────────────────────────────────────────
+    async function handleForgotPassword() {
+        const email = document.getElementById("forgotUser").value.trim();
+        if (!email)               { toast("Please enter your email", true); return; }
+        if (!email.includes("@")) { toast("Enter a valid email address", true); return; }
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+        });
+        if (res.ok) { toast("Reset link sent — check your inbox"); showView("login"); }
+        else { const text = await res.text(); toast(text || "No account found with that email", true); }
+    }
+
+    // ── RESET PASSWORD ────────────────────────────────────────────────────────
+    async function handleResetPassword() {
+        const token  = document.getElementById("resetToken").value;
+        const newPw  = document.getElementById("resetNewPassword").value;
+        const confPw = document.getElementById("resetConfirmPassword").value;
+        if (!newPw || !confPw) { toast("Please fill in both fields", true); return; }
+        if (newPw !== confPw)  { toast("Passwords do not match", true); return; }
+        if (newPw.length < 6)  { toast("Password must be at least 6 characters", true); return; }
+        if (!token)            { toast("Reset token missing — use the link from your email", true); return; }
+        const res = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, newPassword: newPw })
+        });
+        if (res.ok) { toast("Password updated — please sign in"); showView("login"); }
+        else { const text = await res.text(); toast(text || "Reset failed — link may have expired", true); }
+    }
+
+    // ── LOAD PROFILE ──────────────────────────────────────────────────────────
+    async function loadProfile() {
+        const jwt = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/me`, {
+            headers: { Authorization: `Bearer ${jwt}` }
+        });
+        if (!res.ok) { logout(); return; }
+        const user = await res.json();
+        currentUser = user;
+
+        document.getElementById("userInfo").innerHTML = `
+            <p><strong>ID</strong><span>${user.id}</span></p>
+            <p><strong>Username</strong><span>${user.username}</span></p>
+            <p><strong>Email</strong><span style="font-size:0.82rem">${user.email || '—'}</span></p>
+            <p><strong>Roles</strong><span style="color:var(--primary)">${user.roles.join(", ")}</span></p>
+            <p><strong>Verified</strong><span style="color:${user.verified ? 'var(--primary)' : 'var(--accent)'}">${user.verified ? '✓ Yes' : '✕ No'}</span></p>
+        `;
+
+        document.getElementById("selfDeleteBtn").setAttribute("data-id", user.id);
+        document.getElementById("selfDeleteBtn").classList.remove("hidden");
+
+        if (user.roles.includes("ADMIN")) {
+            document.getElementById("adminSection").classList.remove("hidden");
+            fetchAllUsers();
+        }
+    }
+
+    // ── SELF EDIT PROFILE ─────────────────────────────────────────────────────
+    // All logged-in users (regular + admin) editing their OWN profile
+    // PUT /users/{id}
+    function openSelfEditModal() {
+        if (!currentUser) return;
+        document.getElementById("selfEditUserId").value   = currentUser.id;
+        document.getElementById("selfEditUsername").value = currentUser.username;
+        document.getElementById("selfEditEmail").value    = currentUser.email || "";
+        document.getElementById("selfEditModal").classList.remove("hidden");
+    }
+
+    function closeSelfEditModal() {
+        document.getElementById("selfEditModal").classList.add("hidden");
+    }
+
+    async function submitSelfEdit() {
+        const id       = document.getElementById("selfEditUserId").value;
+        const username = document.getElementById("selfEditUsername").value.trim();
+        const email    = document.getElementById("selfEditEmail").value.trim();
+        const jwt      = localStorage.getItem("jwt");
+
+        if (!username) { toast("Username cannot be empty", true); return; }
+
+        const res = await fetch(`${API_BASE}/users/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
+            body: JSON.stringify({ username, email })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            // Backend re-issues tokens when user edits their own profile
+            if (data.accessToken && data.refreshToken) {
+                localStorage.setItem("jwt", data.accessToken);
+                localStorage.setItem("refreshToken", data.refreshToken);
+                toast("Profile updated — session refreshed");
+            } else {
+                toast("Profile updated successfully");
+            }
+            closeSelfEditModal();
+            loadProfile();
+        } else {
+            const text = await res.text();
+            toast(text || "Update failed", true);
+        }
+    }
+
+    // ── CHANGE PASSWORD ───────────────────────────────────────────────────────
+    function togglePwForm() {
+        const form   = document.getElementById("pwForm");
+        const toggle = document.getElementById("pwToggle");
+        const isOpen = !form.classList.contains("collapsed");
+        form.classList.toggle("collapsed", isOpen);
+        toggle.classList.toggle("open", !isOpen);
+    }
+
+    async function submitChangePassword() {
+        const oldPw  = document.getElementById("oldPassword").value;
+        const newPw  = document.getElementById("newPassword").value;
+        const confPw = document.getElementById("confirmPassword").value;
+        if (!oldPw || !newPw) { toast("Please fill in all password fields", true); return; }
+        if (newPw !== confPw) { toast("New passwords do not match", true); return; }
+        if (newPw.length < 6) { toast("Password must be at least 6 characters", true); return; }
+        const jwt = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/me/password`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
+            body: JSON.stringify({ oldPassword: oldPw, newPassword: newPw })
+        });
+        if (res.ok) {
+            toast("Password updated successfully");
+            document.getElementById("oldPassword").value     = "";
+            document.getElementById("newPassword").value     = "";
+            document.getElementById("confirmPassword").value = "";
+            togglePwForm();
+        } else {
+            let msg = "Password change failed";
+            try { const body = await res.text(); if (body && body.length < 200) msg = body; } catch (_) {}
+            toast(msg, true);
+        }
+    }
+
+    // ── ADMIN: FETCH ALL USERS ─────────────────────────────────────────────────
+    // Table shows: Role change + Delete only. No Edit button.
+    async function fetchAllUsers() {
+        const jwt = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/`, {
+            headers: { Authorization: `Bearer ${jwt}` }
+        });
+        const users = await res.json();
+        const tbody = document.getElementById("userList");
+        tbody.innerHTML = "";
+        users.forEach(u => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${u.id}</td>
+                <td>${u.username}</td>
+                <td style="font-size:0.78rem;">${u.email || '—'}</td>
+                <td><span style="color:var(--primary);font-size:0.8rem;">${u.roles.join(", ")}</span></td>
+                <td>
+                    <div class="actions-cell">
+                        <button class="btn-warn" onclick="openRoleModal(${u.id}, '${u.username}', '${u.roles[0]}')">
+                            ⟳ Role
+                        </button>
+                        <button class="btn-danger" onclick="deleteUser(${u.id})">
+                            ✕ Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // ── ADMIN: ROLE MODAL ──────────────────────────────────────────────────────
+    function openRoleModal(id, username, currentRole) {
+        document.getElementById("roleUserId").value = id;
+        document.getElementById("roleUserLabel").textContent = `User: ${username}  (#${id})`;
+        document.getElementById("roleSelect").value = currentRole;
+        document.getElementById("roleModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+        document.getElementById("roleModal").classList.add("hidden");
+    }
+
+    async function submitRoleUpdate() {
+        const id   = document.getElementById("roleUserId").value;
+        const role = document.getElementById("roleSelect").value;
+        const jwt  = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/admin/${id}/roles`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
+            body: JSON.stringify({ roles: [role] })
+        });
+        if (res.ok) { toast("Role updated successfully"); closeModal(); fetchAllUsers(); }
+        else        { toast("Role update failed", true); }
+    }
+
+    // ── DELETE SELF ────────────────────────────────────────────────────────────
+    async function deleteSelf() {
+        const id = document.getElementById("selfDeleteBtn").getAttribute("data-id");
+        if (!confirm("Permanently delete YOUR account? This cannot be undone.")) return;
+        const jwt = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${jwt}` }
+        });
+        if (res.ok) { toast("Account deleted. Goodbye."); setTimeout(logout, 1500); }
+        else        { toast("Could not delete account", true); }
+    }
+
+    // ── ADMIN: DELETE USER ─────────────────────────────────────────────────────
+    async function deleteUser(id) {
+        if (!confirm(`Permanently delete user #${id}?`)) return;
+        const jwt = localStorage.getItem("jwt");
+        const res = await fetch(`${API_BASE}/users/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${jwt}` }
+        });
+        if (res.ok) { toast("User deleted"); fetchAllUsers(); }
+        else        { toast("Delete failed", true); }
+    }
+
+    // ── LOGOUT ─────────────────────────────────────────────────────────────────
+    function logout() {
+        localStorage.clear();
+        currentUser = null;
+        document.getElementById("logoutBtn").classList.add("hidden");
+        document.getElementById("adminSection").classList.add("hidden");
+        showView("login");
+    }
+
+    // ── TOAST ──────────────────────────────────────────────────────────────────
+    function toast(msg, isError = false) {
+        const el = document.createElement("div");
+        el.className = "toast" + (isError ? " error" : "");
+        el.innerHTML = `<span>${isError ? "✕" : "✓"}</span> ${msg}`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+    }
+
+    document.getElementById("roleModal").addEventListener("click", function(e) {
+        if (e.target === this) closeModal();
+    });
+    document.getElementById("selfEditModal").addEventListener("click", function(e) {
+        if (e.target === this) closeSelfEditModal();
+    });
+</script>
+</body>
+</html>

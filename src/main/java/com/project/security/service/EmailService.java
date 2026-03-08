@@ -58,7 +58,7 @@ public class EmailService {
     public void sendVerificationEmail(User user, String token) throws MessagingException {
         String verifyUrl = "http://localhost:8083/auth/verify?token=" + token;
         sendEmail(
-                user.getEmail(),        // ✅ was user.getUsername()
+                user.getEmail(),
                 "Verify Your Account",
                 user.getUsername(),
                 "Please click the button below to verify your account.",
@@ -69,7 +69,7 @@ public class EmailService {
 
     public void sendLoginAlertEmail(User user) throws MessagingException {
         sendEmail(
-                user.getEmail(),        // ✅ was user.getUsername()
+                user.getEmail(),
                 "New Login Detected",
                 user.getUsername(),
                 "A new login was detected in your account.",

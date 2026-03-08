@@ -49,11 +49,18 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/email/**",
                                 "/index.html",
+                                "/favicon.ico",
+                                "/favicon-16x16.png",
+                                "/favicon-32x32.png",
+                                "/apple-touch-icon.png",
+                                "/android-chrome-192x192.png",
+                                "/android-chrome-512x512.png",
                                 "/*.html",
                                 "/*.js",
                                 "/*.css"
                         ).permitAll()
                         .requestMatchers("/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/users/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/users/**")
                         .hasAnyAuthority(USER_DELETE.getPermission())
                         .requestMatchers("/users/**")
