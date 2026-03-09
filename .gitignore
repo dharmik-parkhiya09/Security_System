@@ -71,5 +71,6 @@ build/
 # Target Safety
 ############################################
 target/
-
-
+*.jar
+*.log
+.env
