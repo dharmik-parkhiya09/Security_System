@@ -82,17 +82,15 @@ public class UserController {
             @PathVariable Long id,
             @RequestParam("image") MultipartFile file) throws IOException {
 
-        User user = userRepo.findById(id).orElseThrow();
-
-        String fileName = imageService.uploadProfileImage(file);
-        // ✅ Validate file type
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException("Only image files are allowed");
         }
 
-        user.setProfileImage(fileName);
+        User user = userRepo.findById(id).orElseThrow();
 
+        String fileName = imageService.uploadProfileImage(id, file);
+        user.setProfileImage(fileName);
         userRepo.save(user);
 
         return ResponseEntity.ok("Profile image uploaded");
