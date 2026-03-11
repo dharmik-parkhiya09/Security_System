@@ -128,6 +128,7 @@ public class UserService {
                 .email(user.getEmail())
                 .roles(user.getRoles())
                 .verified(user.isVerified())
+                .profileImage(user.getProfileImage())
                 .build();
     }
 }

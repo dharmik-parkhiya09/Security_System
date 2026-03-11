@@ -15,4 +15,5 @@ public class UserResponse {
     private Set<RoleType> roles;
     private String email;
     private boolean verified;
+    private String profileImage;
 }

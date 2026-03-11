@@ -58,9 +58,12 @@ public class SecurityConfig {
                                 "/android-chrome-512x512.png",
                                 "/*.html",
                                 "/*.js",
-                                "/*.css"
+                                "/*.css",
+                                "/profile-images/**"
                         ).permitAll()
                         .requestMatchers("/users/me/**").authenticated()
+                        .requestMatchers("/users/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/users/*/profile-image") .authenticated()         // ✅ KEY FIX
                         .requestMatchers(HttpMethod.PUT, "/users/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/users/**")
                         .hasAnyAuthority(USER_DELETE.getPermission())

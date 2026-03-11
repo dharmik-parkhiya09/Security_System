@@ -72,5 +72,8 @@ public class User implements UserDetails {
     private String verificationToken;
     private ZonedDateTime  verificationExpiry;
 
+    @Column(name = "profile_image")
+    private String profileImage;
+
 }
 

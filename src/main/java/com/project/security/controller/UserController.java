@@ -5,13 +5,18 @@ import com.project.security.dto.request.UpdateRoleRequest;
 import com.project.security.dto.request.UpdateUserRequest;
 import com.project.security.dto.response.UpdateUserResponse;
 import com.project.security.dto.response.UserResponse;
+import com.project.security.entity.User;
+import com.project.security.repository.UserRepo;
+import com.project.security.service.ImageService;
 import com.project.security.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -20,6 +25,8 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepo userRepo;
+    private final ImageService imageService;
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
@@ -67,5 +74,27 @@ public class UserController {
             @RequestBody UpdateRoleRequest request) {
 
         return ResponseEntity.ok(userService.updateUserRoles(id, request));
+    }
+
+    @PostMapping("/{id}/profile-image")
+    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal.id.toString()")
+    public ResponseEntity<?> uploadProfileImage(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile file) throws IOException {
+
+        User user = userRepo.findById(id).orElseThrow();
+
+        String fileName = imageService.uploadProfileImage(file);
+        // ✅ Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        user.setProfileImage(fileName);
+
+        userRepo.save(user);
+
+        return ResponseEntity.ok("Profile image uploaded");
     }
 }
