@@ -7,13 +7,16 @@ import com.project.security.dto.response.LoginResponse;
 import com.project.security.dto.response.RegisterResponse;
 import com.project.security.entity.PasswordResetToken;
 import com.project.security.entity.User;
+import com.project.security.entity.VerificationToken;
 import com.project.security.enums.AuthProviderType;
 import com.project.security.enums.RoleType;
 import com.project.security.exception.UserNameAlreadyExistException;
 import com.project.security.repository.PasswordResetTokenRepo;
 import com.project.security.repository.UserRepo;
+import com.project.security.repository.VerificationTokenRepository;
 import com.project.security.security.jwt.JwtTokenProvider;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,9 +27,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.net.http.HttpRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Set;
 import java.util.UUID;
 
@@ -42,17 +47,23 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
     private final EmailService emailService;
+    private final VerificationTokenRepository  verificationTokenRepository;
 
     private static final int RESET_TOKEN_EXPIRY_MINUTES = 5;
 
     public RegisterResponse signup(RegisterRequest request) {
-        User user = signUpInternal(request, AuthProviderType.EMAIL, null);
+        User user = null;
+        try {
+            user = signUpInternal(request, AuthProviderType.EMAIL, null);
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
         return new RegisterResponse(user.getId(), user.getUsername());
     }
 
     public User signUpInternal(RegisterRequest request,
                                AuthProviderType providerType,
-                               String providerId) {
+                               String providerId) throws MessagingException {
 
         if (userRepo.findByUsername(request.getUsername()).isPresent()) {
             throw new UserNameAlreadyExistException("Username already exists");
@@ -68,17 +79,37 @@ public class AuthService {
                 .provider(providerType)
                 .providerId(providerId)
                 .roles(Set.of(RoleType.USER))
+                .verified(false)
                 .createdAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")))
                 .build();
 
         if (providerType == AuthProviderType.EMAIL) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
+        } else {
+            user.setVerified(true);
         }
 
-        return userRepo.save(user);
+        userRepo.save(user);
+
+        if(providerType == AuthProviderType.EMAIL){
+
+            String token = UUID.randomUUID().toString();
+
+            VerificationToken vt = VerificationToken.builder()
+                    .token(token)
+                    .user(user)
+                    .expiryDate(ZonedDateTime.now().plusMinutes(30))
+                    .build();
+
+            verificationTokenRepository.save(vt);
+
+            emailService.sendVerificationEmail(user, token);
+        }
+
+        return user;
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, HttpServletRequest httpRequest) throws MessagingException {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -92,9 +123,26 @@ public class AuthService {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        String accessToken = jwtTokenProvider.generateToken(user);
-
+        String accessToken  = jwtTokenProvider.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+        String ip = httpRequest.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = httpRequest.getRemoteAddr();
+        } else {
+            ip = ip.split(",")[0].trim(); // first entry is the real client
+        }
+
+        String device = parseDevice(httpRequest.getHeader("User-Agent"));
+
+        String loginTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"))
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a z"));
+
+        try {
+            emailService.sendLoginAlertEmail(user, ip, device, loginTime);
+        } catch (Exception e) {
+            log.warn("Login alert email could not be sent for user {}: {}", username, e.getMessage());
+        }
 
         return new LoginResponse(
                 accessToken,
@@ -147,5 +195,31 @@ public class AuthService {
         userRepo.save(user);
 
         passwordResetTokenRepo.delete(token);
+    }
+
+    private String parseDevice(String ua) {
+        if (ua == null || ua.isBlank()) return "Unknown device";
+
+        String browser;
+        String os;
+
+        // Browser — order matters: Edge/OPR before Chrome, Chrome before Safari
+        if      (ua.contains("Edg/"))                              browser = "Microsoft Edge";
+        else if (ua.contains("OPR/"))                              browser = "Opera";
+        else if (ua.contains("Chrome/"))                           browser = "Chrome";
+        else if (ua.contains("Firefox/"))                          browser = "Firefox";
+        else if (ua.contains("Safari/") && !ua.contains("Chrome")) browser = "Safari";
+        else if (ua.contains("MSIE") || ua.contains("Trident/"))   browser = "Internet Explorer";
+        else                                                        browser = "Unknown browser";
+
+        // OS
+        if      (ua.contains("Windows NT"))                        os = "Windows";
+        else if (ua.contains("Mac OS X"))                          os = "macOS";
+        else if (ua.contains("Android"))                           os = "Android";
+        else if (ua.contains("iPhone") || ua.contains("iPad"))     os = "iOS";
+        else if (ua.contains("Linux"))                             os = "Linux";
+        else                                                        os = "Unknown OS";
+
+        return browser + " on " + os;
     }
 }

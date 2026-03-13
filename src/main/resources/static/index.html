@@ -124,6 +124,17 @@
         .forgot-link a { font-size: 0.8rem; color: var(--text-muted); cursor: pointer; text-decoration: none; }
         .forgot-link a:hover { color: var(--primary-light); }
 
+        /* VERIFY EMAIL PAGE */
+        .verify-email-wrap { min-height: calc(100vh - 68px); display: flex; align-items: center; justify-content: center; padding: 40px 24px; background: linear-gradient(135deg, #f4f6f9 0%, #e8f0fa 100%); }
+        .verify-email-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 16px; padding: 52px 44px; width: 100%; max-width: 460px; box-shadow: var(--shadow-lg); animation: fadeUp 0.35s ease both; text-align: center; }
+        .verify-email-icon { width: 72px; height: 72px; background: var(--primary-ultra); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 2rem; }
+        .verify-email-title { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; letter-spacing: -0.02em; }
+        .verify-email-sub { font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 8px; }
+        .verify-email-address { font-weight: 700; color: var(--text); font-size: 0.95rem; margin-bottom: 28px; }
+        .verify-email-note { background: var(--primary-ultra); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 0.8rem; color: var(--primary); margin-bottom: 28px; line-height: 1.6; text-align: left; }
+        .verify-email-note strong { display: block; margin-bottom: 4px; font-size: 0.82rem; }
+        .verify-email-actions { display: flex; flex-direction: column; gap: 10px; }
+
         /* DASHBOARD */
         .dashboard-layout { display: flex; min-height: calc(100vh - 68px); }
         .sidebar { width: 230px; background: var(--bg-white); border-right: 1px solid var(--border); padding: 24px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -442,6 +453,26 @@
     </div>
 </div>
 
+<!-- VERIFY EMAIL -->
+<div id="pageVerifyEmail" class="page">
+    <div class="verify-email-wrap">
+        <div class="verify-email-card">
+            <div class="verify-email-icon">📬</div>
+            <h2 class="verify-email-title">Check your email</h2>
+            <p class="verify-email-sub">We've sent a verification link to</p>
+            <div class="verify-email-address" id="verifyEmailAddress">—</div>
+            <div class="verify-email-note">
+                <strong>📌 What to do next</strong>
+                Open the email and click the <strong>"Verify my email"</strong> button. You'll be brought back here and signed in automatically — no need to open a new tab.
+            </div>
+            <div class="verify-email-actions">
+                <button class="btn btn-primary" onclick="resendVerificationEmail()" id="resendBtn">Resend verification email</button>
+                <button class="btn btn-secondary" style="width:100%;" onclick="showPage('pageLogin')">← Back to Sign In</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- DASHBOARD -->
 <div id="pageDashboard" class="page">
     <div class="dashboard-layout">
@@ -702,6 +733,7 @@
     const API_BASE = "http://localhost:8083";
     let currentUser = null;
     let usersMap = {}; // stores all users by id for role modal
+    let pendingVerifyEmail = null; // holds email while user awaits verification
 
     // Backend sends Set<RoleType> — may be objects {name:"ADMIN"} or plain strings
     function normalizeRoles(roles) {
@@ -717,10 +749,11 @@
     }
 
     window.onload = () => {
-        const params  = new URLSearchParams(window.location.search);
-        const token   = params.get("token");
-        const refresh = params.get("refresh");
-        const reset   = params.get("resetToken");
+        const params    = new URLSearchParams(window.location.search);
+        const token     = params.get("token");
+        const refresh   = params.get("refresh");
+        const reset     = params.get("resetToken");
+        const verified  = params.get("verified");
 
         // Case 1: OAuth2 redirect — both token (JWT) + refresh present
         if (token && refresh) {
@@ -732,9 +765,16 @@
             return;
         }
 
-        // Case 2: Email verification redirect — backend already verified and sends back JWT only
-        // Flow: email link → /auth/verify?token=VERIFY_TOKEN → backend redirects → index.html?token=JWT
-        // The token here IS already a valid JWT — just store it and enter dashboard
+        // Case 2: Email verification redirect — backend verified the token and redirects
+        // to ?verified=true → show login page in the SAME tab with a success message
+        if (verified === "true") {
+            clearParams();
+            showPage("pageLogin");
+            setTimeout(() => toast("✅ Email verified! You can now sign in.", "success"), 200);
+            return;
+        }
+
+        // Legacy Case 2 (old flow): token-only redirect (JWT in URL) — keep for back-compat
         if (token && !refresh) {
             localStorage.setItem("jwt", token);
             clearParams();
@@ -798,8 +838,23 @@
         const username = document.getElementById("regUser").value.trim(), email = document.getElementById("regEmail").value.trim(), password = document.getElementById("regPass").value;
         if (!username || !email || !password) { toast("Please fill in all fields", "error"); return; }
         const res = await fetch(`${API_BASE}/auth/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, email, password, roles: ["USER"] }) });
-        if (res.ok) { toast("Registration successful!", "success"); showPage("pageLogin"); }
-        else { const t = await res.text(); toast(t || "Registration failed", "error"); }
+        if (res.ok) {
+            pendingVerifyEmail = email;
+            document.getElementById("verifyEmailAddress").textContent = email;
+            showPage("pageVerifyEmail");
+        } else { const t = await res.text(); toast(t || "Registration failed", "error"); }
+    }
+
+    async function resendVerificationEmail() {
+        if (!pendingVerifyEmail) { toast("No email to resend to", "error"); return; }
+        const btn = document.getElementById("resendBtn");
+        btn.disabled = true; btn.textContent = "Sending…";
+        try {
+            const res = await fetch(`${API_BASE}/auth/resend-verification`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: pendingVerifyEmail }) });
+            if (res.ok) { toast("Verification email resent!", "success"); }
+            else { const t = await res.text(); toast(t || "Failed to resend", "error"); }
+        } catch { toast("Network error", "error"); }
+        setTimeout(() => { btn.disabled = false; btn.textContent = "Resend verification email"; }, 30000);
     }
 
     async function handleForgotPassword() {
@@ -1062,6 +1117,11 @@
 
     function logout() {
         localStorage.clear(); currentUser = null;
+        // Clear all auth form fields so previous credentials never leak to the next user
+        ["loginUser", "loginPass", "regUser", "regEmail", "regPass",
+            "forgotEmail", "resetNewPw", "resetConfirmPw"].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = "";
+        });
         document.getElementById("navTabs").style.display = "none";
         document.getElementById("navAvatarWrap").classList.add("hidden");
         document.getElementById("tab-admin").style.display = "none";

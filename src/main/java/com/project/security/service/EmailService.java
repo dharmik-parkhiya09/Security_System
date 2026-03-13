@@ -91,4 +91,57 @@ public class EmailService {
         );
     }
 
+
+    private void sendEmail(String to,
+                           String subject,
+                           String name,
+                           String actionUrl,
+                           String buttonText,
+                           String ip,
+                           String device,
+                           String loginTime) throws MessagingException {
+
+        Context context = new Context();
+        context.setVariable("name",       name);
+        context.setVariable("subject",    subject);
+        context.setVariable("message",    null);      // suppresses the plain-text block
+        context.setVariable("actionUrl",  actionUrl);
+        context.setVariable("buttonText", buttonText);
+        context.setVariable("ip",         ip);
+        context.setVariable("device",     device);
+        context.setVariable("loginTime",  loginTime);
+
+        String html = templateEngine.process("email-template", context);
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper =
+                new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        helper.setFrom(fromEmail);
+
+        mailSender.send(mimeMessage);
+
+        log.info("Login alert email sent successfully to {}", to);
+    }
+
+
+    public void sendLoginAlertEmail(User user, String ip, String device, String loginTime)
+            throws MessagingException {
+
+        sendEmail(
+                user.getEmail(),
+                "New Login Detected on Your Account",
+                user.getUsername(),
+                "http://localhost:8083/index.html",
+                "Go to My Account",
+                ip,
+                device,
+                loginTime
+        );
+    }
+
+
 }

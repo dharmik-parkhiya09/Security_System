@@ -6,12 +6,15 @@ import com.project.security.dto.response.LoginResponse;
 import com.project.security.dto.response.RegisterResponse;
 import com.project.security.entity.RefreshToken;
 import com.project.security.entity.User;
+import com.project.security.entity.VerificationToken;
 import com.project.security.repository.RefreshTokenRepository;
 import com.project.security.repository.UserRepo;
+import com.project.security.repository.VerificationTokenRepository;
 import com.project.security.security.jwt.JwtTokenProvider;
 import com.project.security.service.AuthService;
 import com.project.security.service.RefreshTokenService;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -42,10 +46,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                               HttpServletRequest httpRequest) throws MessagingException {
         log.info("LOGIN HIT: {}", request.getUsername());
-        LoginResponse response = authService.login(request);
-        log.info("LOGIN RESPONSE: {}", response);  // ← ADD THIS
+        LoginResponse response = authService.login(request, httpRequest);
+        log.info("LOGIN RESPONSE: {}", response);
         return ResponseEntity.ok(response);
     }
 
@@ -53,23 +58,20 @@ public class AuthController {
     public void verify(@RequestParam String token,
                        HttpServletResponse response) throws IOException {
 
-        User user = userRepo.findByVerificationToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        VerificationToken vt = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired verification token"));
 
-        if (user.getVerificationExpiry().isBefore(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")))) {
-            throw new RuntimeException("Token expired");
+        if (vt.getExpiryDate().isBefore(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")))) {
+            throw new RuntimeException("Verification link has expired. Please request a new one.");
         }
 
+        User user = vt.getUser();
         user.setVerified(true);
-        user.setVerificationToken(null);
-        user.setVerificationExpiry(null);
         userRepo.save(user);
 
-        String jwt = jwtTokenProvider.generateToken(user);
+        verificationTokenRepository.delete(vt);
 
-        response.sendRedirect(
-                "http://localhost:8083/index.html?token=" + jwt
-        );
+        response.sendRedirect("http://localhost:8083/index.html?verified=true");
     }
 
     @PostMapping("/refresh")
