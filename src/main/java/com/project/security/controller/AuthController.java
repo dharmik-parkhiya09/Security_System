@@ -16,6 +16,7 @@ import com.project.security.service.RefreshTokenService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,23 +56,29 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public void verify(@RequestParam String token,
-                       HttpServletResponse response) throws IOException {
+    @Transactional
+    public void verifyEmail(@RequestParam String token,
+                            HttpServletResponse response) throws IOException {
 
         VerificationToken vt = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired verification token"));
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        if (vt.getExpiryDate().isBefore(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")))) {
-            throw new RuntimeException("Verification link has expired. Please request a new one.");
+        if (vt.getExpiryDate().isBefore(ZonedDateTime.now())) {
+            verificationTokenRepository.delete(vt);
+            response.sendRedirect("http://localhost:8083/index.html?error=token_expired");
+            return;
         }
 
         User user = vt.getUser();
         user.setVerified(true);
         userRepo.save(user);
-
         verificationTokenRepository.delete(vt);
 
-        response.sendRedirect("http://localhost:8083/index.html?verified=true");
+        String jwt = jwtTokenProvider.generateToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+        response.sendRedirect(
+                "http://localhost:8083/index.html?token=" + jwt + "&refresh=" + refreshToken
+        );
     }
 
     @PostMapping("/refresh")

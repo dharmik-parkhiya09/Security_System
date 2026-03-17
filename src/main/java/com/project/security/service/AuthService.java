@@ -27,7 +27,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.net.http.HttpRequest;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -47,7 +50,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
     private final EmailService emailService;
-    private final VerificationTokenRepository  verificationTokenRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
 
     private static final int RESET_TOKEN_EXPIRY_MINUTES = 5;
 
@@ -91,8 +94,7 @@ public class AuthService {
 
         userRepo.save(user);
 
-        if(providerType == AuthProviderType.EMAIL){
-
+        if (providerType == AuthProviderType.EMAIL) {
             String token = UUID.randomUUID().toString();
 
             VerificationToken vt = VerificationToken.builder()
@@ -102,7 +104,6 @@ public class AuthService {
                     .build();
 
             verificationTokenRepository.save(vt);
-
             emailService.sendVerificationEmail(user, token);
         }
 
@@ -124,22 +125,25 @@ public class AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         String accessToken  = jwtTokenProvider.generateToken(user);
-        var refreshToken = refreshTokenService.createRefreshToken(user.getId());
+        var    refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
+        // --- Extract real client IP (handles reverse-proxy X-Forwarded-For) ---
         String ip = httpRequest.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
             ip = httpRequest.getRemoteAddr();
         } else {
-            ip = ip.split(",")[0].trim(); // first entry is the real client
+            ip = ip.split(",")[0].trim();
         }
 
-        String device = parseDevice(httpRequest.getHeader("User-Agent"));
-
+        // --- Resolve IP to city/country, get device label and login time ---
+        String location  = resolveLocation(ip);
+        String device    = parseDevice(httpRequest.getHeader("User-Agent"));
         String loginTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"))
                 .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a z"));
 
+        // --- Send alert (best-effort — never fail the login if mail fails) ---
         try {
-            emailService.sendLoginAlertEmail(user, ip, device, loginTime);
+            emailService.sendLoginAlertEmail(user, location, device, loginTime);
         } catch (Exception e) {
             log.warn("Login alert email could not be sent for user {}: {}", username, e.getMessage());
         }
@@ -150,6 +154,115 @@ public class AuthService {
                 "Bearer",
                 user.getId()
         );
+    }
+
+    /**
+     * Calls ip-api.com to resolve an IP address to "City, Region, Country".
+     * - Loopback IPs  → "Local network (localhost)"
+     * - Private ranges → "Private network"
+     * - Any failure    → raw IP string as safe fallback
+     */
+    private String resolveLocation(String ip) {
+        if (ip == null || ip.isBlank()) return "Unknown location";
+
+        // Normalise IPv6: strip brackets and zone-id (e.g. [::1]%0 → ::1)
+        ip = ip.replaceAll("[\\[\\]]", "").split("%")[0].trim();
+
+        // Loopback — covers 127.0.0.1, ::1, and all verbose forms like 0:0:0:0:0:0:0:1
+        boolean isLoopback = ip.equals("127.0.0.1")
+                || ip.equals("::1")
+                || ip.equals("0:0:0:0:0:0:0:1")
+                || ip.startsWith("0:0:0:0");
+        if (isLoopback) return "Local network (localhost)";
+
+        // Private IPv4 ranges
+        if (ip.startsWith("10.") || ip.startsWith("192.168.") ||
+                ip.matches("172\\.(1[6-9]|2[0-9]|3[01])\\..*")) {
+            return "Private network";
+        }
+
+        try {
+            // Wrap bare IPv6 addresses in brackets so the URL is valid
+            String urlIp = ip.contains(":") ? "[" + ip + "]" : ip;
+            URL url = new URL("http://ip-api.com/json/" + urlIp + "?fields=status,city,regionName,country");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+
+            if (conn.getResponseCode() != 200) {
+                log.warn("ip-api.com returned HTTP {} for IP {}", conn.getResponseCode(), ip);
+                return ip;
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+
+            String json = sb.toString();
+            if (json.contains("\"status\":\"fail\"")) {
+                log.warn("ip-api.com failed to resolve IP: {}", ip);
+                return ip;
+            }
+
+            String city    = extractJsonField(json, "city");
+            String region  = extractJsonField(json, "regionName");
+            String country = extractJsonField(json, "country");
+
+            StringBuilder loc = new StringBuilder();
+            if (!city.isEmpty())   loc.append(city);
+            if (!region.isEmpty() && !region.equals(city)) {
+                if (loc.length() > 0) loc.append(", ");
+                loc.append(region);
+            }
+            if (!country.isEmpty()) {
+                if (loc.length() > 0) loc.append(", ");
+                loc.append(country);
+            }
+
+            return loc.length() > 0 ? loc.toString() : ip;
+
+        } catch (Exception e) {
+            log.warn("Location lookup failed for IP {}: {}", ip, e.getMessage());
+            return ip;
+        }
+    }
+
+    /** Extracts a string value from a flat JSON object without a JSON library. */
+    private String extractJsonField(String json, String key) {
+        String search = "\"" + key + "\":\"";
+        int start = json.indexOf(search);
+        if (start == -1) return "";
+        start += search.length();
+        int end = json.indexOf("\"", start);
+        return end == -1 ? "" : json.substring(start, end);
+    }
+
+    /** Converts a raw User-Agent string into a concise "Browser on OS" label. */
+    private String parseDevice(String ua) {
+        if (ua == null || ua.isBlank()) return "Unknown device";
+
+        String browser;
+        String os;
+
+        if      (ua.contains("Edg/"))                               browser = "Microsoft Edge";
+        else if (ua.contains("OPR/"))                               browser = "Opera";
+        else if (ua.contains("Chrome/"))                            browser = "Chrome";
+        else if (ua.contains("Firefox/"))                           browser = "Firefox";
+        else if (ua.contains("Safari/") && !ua.contains("Chrome"))  browser = "Safari";
+        else if (ua.contains("MSIE") || ua.contains("Trident/"))    browser = "Internet Explorer";
+        else                                                         browser = "Unknown browser";
+
+        if      (ua.contains("Windows NT"))                         os = "Windows";
+        else if (ua.contains("Mac OS X"))                           os = "macOS";
+        else if (ua.contains("Android"))                            os = "Android";
+        else if (ua.contains("iPhone") || ua.contains("iPad"))      os = "iOS";
+        else if (ua.contains("Linux"))                              os = "Linux";
+        else                                                         os = "Unknown OS";
+
+        return browser + " on " + os;
     }
 
     @Transactional
@@ -174,7 +287,6 @@ public class AuthService {
                         .build();
 
         passwordResetTokenRepo.save(resetToken);
-
         emailService.sendResetPasswordEmail(user, token);
     }
 
@@ -189,37 +301,8 @@ public class AuthService {
         }
 
         User user = token.getUser();
-
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-
         userRepo.save(user);
-
         passwordResetTokenRepo.delete(token);
-    }
-
-    private String parseDevice(String ua) {
-        if (ua == null || ua.isBlank()) return "Unknown device";
-
-        String browser;
-        String os;
-
-        // Browser — order matters: Edge/OPR before Chrome, Chrome before Safari
-        if      (ua.contains("Edg/"))                              browser = "Microsoft Edge";
-        else if (ua.contains("OPR/"))                              browser = "Opera";
-        else if (ua.contains("Chrome/"))                           browser = "Chrome";
-        else if (ua.contains("Firefox/"))                          browser = "Firefox";
-        else if (ua.contains("Safari/") && !ua.contains("Chrome")) browser = "Safari";
-        else if (ua.contains("MSIE") || ua.contains("Trident/"))   browser = "Internet Explorer";
-        else                                                        browser = "Unknown browser";
-
-        // OS
-        if      (ua.contains("Windows NT"))                        os = "Windows";
-        else if (ua.contains("Mac OS X"))                          os = "macOS";
-        else if (ua.contains("Android"))                           os = "Android";
-        else if (ua.contains("iPhone") || ua.contains("iPad"))     os = "iOS";
-        else if (ua.contains("Linux"))                             os = "Linux";
-        else                                                        os = "Unknown OS";
-
-        return browser + " on " + os;
     }
 }

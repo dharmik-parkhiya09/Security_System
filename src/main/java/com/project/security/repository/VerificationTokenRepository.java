@@ -1,5 +1,6 @@
 package com.project.security.repository;
 
+import com.project.security.entity.User;
 import com.project.security.entity.VerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,5 @@ public interface VerificationTokenRepository
         extends JpaRepository<VerificationToken, Long> {
 
     Optional<VerificationToken> findByToken(String token);
+    void deleteByUser(User user);
 }

@@ -2,9 +2,11 @@ package com.project.security.security.oAuth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.security.entity.User;
+import com.project.security.entity.VerificationToken;
 import com.project.security.enums.AuthProviderType;
 import com.project.security.enums.RoleType;
 import com.project.security.repository.UserRepo;
+import com.project.security.repository.VerificationTokenRepository;
 import com.project.security.security.jwt.JwtTokenProvider;
 import com.project.security.service.EmailService;
 import com.project.security.service.RefreshTokenService;
@@ -36,6 +38,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper objectMapper;
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
+    private final VerificationTokenRepository verificationTokenRepository; // ✅ ADDED
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -47,8 +50,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         OAuth2User oAuth2User = authToken.getPrincipal();
 
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
+        String email      = oAuth2User.getAttribute("email");
+        String name       = oAuth2User.getAttribute("name");
         String providerId = oAuth2User.getAttribute("sub");
 
         if (email == null) {
@@ -56,36 +59,39 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         }
 
         User user = userRepo.findByProviderIdAndProvider(providerId, AuthProviderType.GOOGLE)
-                .orElseGet(() -> {
-                    return userRepo.findByEmail(email)
-                            .orElseGet(() -> {
-                                User newUser = new User();
-                                newUser.setEmail(email);
-                                newUser.setUsername(email);
-                                newUser.setProvider(AuthProviderType.GOOGLE);
-                                newUser.setProviderId(providerId);
-                                newUser.setPassword(UUID.randomUUID().toString());
-                                newUser.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
-                                newUser.setRoles(Set.of(RoleType.USER));
-                                newUser.setVerified(false);
-
-                                return userRepo.save(newUser);
-                            });
-                });
+                .orElseGet(() -> userRepo.findByEmail(email)
+                        .orElseGet(() -> {
+                            User newUser = new User();
+                            newUser.setEmail(email);
+                            newUser.setUsername(email);
+                            newUser.setProvider(AuthProviderType.GOOGLE);
+                            newUser.setProviderId(providerId);
+                            newUser.setPassword(UUID.randomUUID().toString());
+                            newUser.setCreatedAt(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
+                            newUser.setRoles(Set.of(RoleType.USER));
+                            newUser.setVerified(false);
+                            return userRepo.save(newUser);
+                        }));
 
         if (!user.isVerified()) {
 
+            verificationTokenRepository.deleteByUser(user);
+
             String token = UUID.randomUUID().toString();
 
-            user.setVerificationToken(token);
-            user.setVerificationExpiry(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).plusMinutes(15));
-            userRepo.save(user);
+            VerificationToken vt = VerificationToken.builder()
+                    .token(token)
+                    .user(user)
+                    .expiryDate(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).plusMinutes(30))
+                    .build();
+
+            verificationTokenRepository.save(vt);
 
             try {
                 emailService.sendVerificationEmail(user, token);
                 log.info("Verification email sent to {}", email);
             } catch (MessagingException e) {
-                log.error("Failed to send verification email", e);
+                log.error("Failed to send verification email to {}", email, e);
                 throw new RuntimeException("Email sending failed");
             }
 
@@ -94,17 +100,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                     "Verification email sent. Please verify your account.");
             return;
         }
-
-        String accessToken = jwtTokenProvider.generateToken(user);
-        String refreshToken =
-                refreshTokenService.createRefreshToken(user.getId()).getToken();
-
+        String accessToken  = jwtTokenProvider.generateToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
         try {
             emailService.sendLoginAlertEmail(user);
             log.info("Login alert email sent to {}", user.getUsername());
         } catch (MessagingException e) {
-            log.warn("Failed to send login alert email", e);
+            log.warn("Failed to send login alert email for {}: {}", user.getUsername(), e.getMessage());
         }
 
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
