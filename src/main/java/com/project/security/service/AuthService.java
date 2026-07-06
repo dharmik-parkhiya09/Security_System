@@ -127,7 +127,6 @@ public class AuthService {
         String accessToken  = jwtTokenProvider.generateToken(user);
         var    refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-        // --- Extract real client IP (handles reverse-proxy X-Forwarded-For) ---
         String ip = httpRequest.getHeader("X-Forwarded-For");
         if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
             ip = httpRequest.getRemoteAddr();
@@ -135,13 +134,11 @@ public class AuthService {
             ip = ip.split(",")[0].trim();
         }
 
-        // --- Resolve IP to city/country, get device label and login time ---
         String location  = resolveLocation(ip);
         String device    = parseDevice(httpRequest.getHeader("User-Agent"));
         String loginTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"))
                 .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a z"));
 
-        // --- Send alert (best-effort — never fail the login if mail fails) ---
         try {
             emailService.sendLoginAlertEmail(user, location, device, loginTime);
         } catch (Exception e) {
@@ -230,7 +227,6 @@ public class AuthService {
         }
     }
 
-    /** Extracts a string value from a flat JSON object without a JSON library. */
     private String extractJsonField(String json, String key) {
         String search = "\"" + key + "\":\"";
         int start = json.indexOf(search);
@@ -240,7 +236,6 @@ public class AuthService {
         return end == -1 ? "" : json.substring(start, end);
     }
 
-    /** Converts a raw User-Agent string into a concise "Browser on OS" label. */
     private String parseDevice(String ua) {
         if (ua == null || ua.isBlank()) return "Unknown device";
 

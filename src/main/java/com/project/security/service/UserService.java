@@ -1,7 +1,6 @@
 package com.project.security.service;
 
 import com.project.security.dto.request.ChangePasswordRequest;
-import com.project.security.dto.request.RegisterRequest;
 import com.project.security.dto.request.UpdateRoleRequest;
 import com.project.security.dto.request.UpdateUserRequest;
 import com.project.security.dto.response.UpdateUserResponse;
